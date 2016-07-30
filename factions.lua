@@ -244,7 +244,11 @@ function factions.member_add(name, object)
 	if object.object ~= nil then
 		object = object.object
 	end
-	
+	if next(factions.get_factions(object)) ~= nil then
+		for k,v in pairs(factions.get_factions(object)) do
+		factions.member_remove(k,object)
+		end
+	end
 	if not factions.exists(name) then
 		print("Unable to add to NON existant faction >" .. name .. "<")
 		return false

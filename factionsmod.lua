@@ -263,7 +263,7 @@ function factionsmod.claim(name,player)
 					local pos = player:getpos()
 					local is_owned = factionsmod.testifallowed(pos,nil)
 					if is_owned ~= true then
-					table.insert(factionsmod.data.factionsmod[name].chunk[#factionsmod.data.factionsmod[name].chunk + 1],{})
+					table.insert(factionsmod.data.factionsmod[name].chunk,{})
 					factionsmod.data.factionsmod[name].chunk[#factionsmod.data.factionsmod[name].chunk][0] = math.floor(pos.x/16.0)
 					factionsmod.data.factionsmod[name].chunk[#factionsmod.data.factionsmod[name].chunk][1] = math.floor(pos.z/16.0)
 					end

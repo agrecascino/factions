@@ -324,7 +324,7 @@ function factions.member_remove(name,object)
 		factions.data.objects[id].factions[name] ~= nil then
 		factions.data.objects[id].factions[name] = nil
 		factions.dynamic_data.membertable[name][id] = nil
-		if factions.data.objects[id].factions[name].owner == object:get_player_name() then
+		if factions.data.factions[name].owner == object:get_player_name() then
 			factions.delete_faction(name)
 		end
 		factions.save()

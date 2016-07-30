@@ -54,6 +54,8 @@ function factionsmod.add_faction(name)
 		factionsmod.data.factionsmod[name].adminlist = {}
 		factionsmod.data.factionsmod[name].invitations = {}
 		factionsmod.data.factionsmod[name].owner = ""
+		factionsmod.data.factionsmod[name].chunk = {}
+		factionsmod.data.factionsmod[name].chunk[0] = {}	
 		
 		factionsmod.dynamic_data.membertable[name] = {}
 		
@@ -245,9 +247,9 @@ function factionsmod.member_add(name, object)
 		object = object.object
 	end
 	if next(factionsmod.get_factionsmod(object)) ~= nil then
-		for k in factionsmod.get_factionsmod(object) do
+		for k,v in pairs(factionsmod.get_factionsmod(object)) do
 			if k ~= nil then
-				factionsmod.member_remove(k,object)
+				factionsmod.member_remove(v,object)
 			end
 		end
 	end
@@ -781,7 +783,14 @@ function factionsmod.load()
 
 	--create special faction players
 	--factionsmod.add_faction("players")
-
+	minetest.register_on_dignode(function(pos,oldnode,digger)
+						if next(factionsmod.data.factionsmod) ~= nil then
+		for k,v in pairs(factionsmod.data.factionsmod) do
+			--for k,v in 
+		end
+	end
+						end
+	)
 	--autojoin players to faction players
 	minetest.register_on_joinplayer(
 		function(player)

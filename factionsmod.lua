@@ -54,8 +54,7 @@ function factionsmod.add_faction(name)
 		factionsmod.data.factionsmod[name].adminlist = {}
 		factionsmod.data.factionsmod[name].invitations = {}
 		factionsmod.data.factionsmod[name].owner = ""
-		factionsmod.data.factionsmod[name].chunk = {}
-		factionsmod.data.factionsmod[name].chunk[0] = {}	
+		factionsmod.data.factionsmod[name].chunk = {}	
 		
 		factionsmod.dynamic_data.membertable[name] = {}
 		
@@ -786,7 +785,10 @@ function factionsmod.load()
 	minetest.register_on_dignode(function(pos,oldnode,digger)
 						if next(factionsmod.data.factionsmod) ~= nil then
 		for k,v in pairs(factionsmod.data.factionsmod) do
-			--for k,v in 
+			for i =1, v.chunk.maxn() do
+				if v.chunk[i][1] == math.floor(pos.x/16) then
+				end
+			end
 		end
 	end
 						end

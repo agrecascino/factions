@@ -189,7 +189,7 @@ function factions_chat.cmdhandler(playername,parameter)
 			end
 		end
 	--end
-	if cmd == "
+
 	if cmd == "join" then
 		if params[2] ~= nil then	
 				--check for invitation

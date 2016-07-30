@@ -168,6 +168,7 @@ function factions_chat.cmdhandler(playername,parameter)
 	--if minetest.check_player_privs(playername,{ faction_admin=true }) then
 		--create new faction
 		if cmd == "create" then
+			minetest.chat_send_player(playername,"dfdsofjdspofndsfjdsp",false)
 			if params[2] ~= nil then
 				if factions.add_faction(params[2]) then
 					minetest.chat_send_player(playername,

@@ -264,8 +264,8 @@ function factions.member_add(name, object)
 			factions.dynamic_data.membertable[name][new_entry.name] = true
 			factions.data.factions[name].invitations[new_entry.name] = nil
 			if factions.data.factions[name].owner == "" then
-				factions.data.factions[name].owner = object.get_player_name()
-				factions.set_admin(name,object.get_player_name(), true)
+				factions.data.factions[name].owner = object:get_player_name()
+				factions.set_admin(name,object:get_player_name(), true)
 			end
 			factions.save()
 			return true
@@ -334,7 +334,7 @@ function factions.member_remove(name,object)
 		factions.save()
 		return true
 	end
-	if factions.data.objects[id].factions[name].owner == object.get_player_name() then
+	if factions.data.objects[id].factions[name].owner == object:get_player_name() then
 		factions.delete_faction(name)
 		
 	end

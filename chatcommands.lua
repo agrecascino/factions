@@ -146,8 +146,7 @@ function factions_chat.cmdhandler(playername,parameter)
 			if params[3] ~= nil then
 				local toremove = minetest.env:get_player_by_name(params[3])
 				--allowed if faction_admin, admin of faction or player itself
-				if minetest.check_player_privs(playername,{ faction_admin=true }) or
-					factions.is_admin(params[2],playername) and
+				if factions.is_admin(params[2],playername) and
 					toremove ~= nil then
 					
 					factions.member_remove(params[2],toremove)
@@ -190,29 +189,9 @@ function factions_chat.cmdhandler(playername,parameter)
 			end
 		end
 	--end
-	
+	if cmd == "
 	if cmd == "join" then
 		if params[2] ~= nil then	
-			if params[3] ~= nil and
-				minetest.check_player_privs(playername,{ faction_admin=true }) then
-				
-				local toadd = minetest.env:get_player_by_name(params[3])
-				
-				if toadd ~= nil then
-					if factions.member_add(params[2],toadd) then
-						minetest.chat_send_player(playername,
-							"Factions: " .. params[3] .. " joined faction " ..
-							params[2],
-							false)
-						return
-					end
-				end
-				minetest.chat_send_player(playername,
-					"Factions: " .. params[3] .. " FAILED to join faction " ..
-					params[2],
-					false)
-				return
-			else
 				--check for invitation
 				if factions.is_invited(params[2],playername) then
 					if factions.member_add(params[2],player) then
@@ -234,7 +213,6 @@ function factions_chat.cmdhandler(playername,parameter)
 						false)
 					return
 				end	
-			end
 		end
 	end
 	

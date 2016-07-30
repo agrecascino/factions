@@ -102,7 +102,8 @@ function factions_chat.cmdhandler(playername,parameter)
 	end
 	
 	if cmd == "claim" then
-		minetest.chat_send_player(playername,"Trust me, we're working on it",false)
+		local playerfactions = factions.get_factions(player)
+		
 		return
 	end
 	if cmd == "unclaim" then
@@ -165,7 +166,7 @@ function factions_chat.cmdhandler(playername,parameter)
 	end
 	
 	--handle superadmin only commands
-	if minetest.check_player_privs(playername,{ faction_admin=true }) then
+	--if minetest.check_player_privs(playername,{ faction_admin=true }) then
 		--create new faction
 		if cmd == "create" then
 			if params[2] ~= nil then
@@ -173,6 +174,12 @@ function factions_chat.cmdhandler(playername,parameter)
 					minetest.chat_send_player(playername,
 						"Factions: created faction " .. params[2],
 						false)
+					if factions.member_add(params[2],minetest.env:get_player_by_name(playername)) then
+						minetest.chat_send_player(playername,
+							"Factions: " .. playername .. " joined faction " ..
+							params[2],
+							false)
+					end
 					return
 				else
 					minetest.chat_send_player(playername,
@@ -182,7 +189,7 @@ function factions_chat.cmdhandler(playername,parameter)
 				end
 			end
 		end
-	end
+	--end
 	
 	if cmd == "join" then
 		if params[2] ~= nil then	

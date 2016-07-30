@@ -245,7 +245,7 @@ function factionsmod.member_add(name, object)
 		object = object.object
 	end
 	if next(factionsmod.get_factionsmod(object)) ~= nil then
-		for k,v in pairs(factionsmod.get_factionsmod(object)) do
+		for k in factionsmod.get_factionsmod(object) do
 			if k ~= nil then
 				factionsmod.member_remove(k,object)
 			end

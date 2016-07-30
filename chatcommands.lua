@@ -1,10 +1,10 @@
 -------------------------------------------------------------------------------
--- factions Mod by Sapier
+-- factionsmod Mod by Sapier
 --
 -- License WTFPL
 --
 --! @file chatcommnd.lua
---! @brief factions chat interface
+--! @brief factionsmod chat interface
 --! @copyright Sapier
 --! @author Sapier
 --! @date 2013-05-08
@@ -12,18 +12,18 @@
 -- Contact sapier a t gmx net
 -------------------------------------------------------------------------------
 
---! @class factions_chat
+--! @class factionsmod_chat
 --! @brief chat interface class
-factions_chat = {}
+factionsmod_chat = {}
 
 -------------------------------------------------------------------------------
 -- name: init()
 --
 --! @brief initialize chat interface
---! @memberof factions_chat
+--! @memberof factionsmod_chat
 --! @public
 -------------------------------------------------------------------------------
-function factions_chat.init()
+function factionsmod_chat.init()
 
 	minetest.register_privilege("faction_user",
 		{
@@ -34,26 +34,26 @@ function factions_chat.init()
 	
 	minetest.register_privilege("faction_admin",
 		{
-			description = "this user is allowed to create or delete factions",
+			description = "this user is allowed to create or delete factionsmod",
 			give_to_singleplayer = true,
 		}
 	)
 	
-	minetest.register_chatcommand("factions",
+	minetest.register_chatcommand("factionsmod",
 		{
 			params = "<cmd> <parameter 1> .. <parameter n>",
 			description = "faction administration functions",
 			privs = { interact=true },
-			func = factions_chat.cmdhandler,
+			func = factionsmod_chat.cmdhandler,
 		}
 	)
 	
 	minetest.register_chatcommand("af",
 		{
 			params = "text",
-			description = "send message to all factions",
+			description = "send message to all factionsmod",
 			privs = { faction_user=true },
-			func = factions_chat.allfactions_chathandler,
+			func = factionsmod_chat.allfactionsmod_chathandler,
 		}
 	)
 	
@@ -62,7 +62,7 @@ function factions_chat.init()
 			params = "<factionname> text",
 			description = "send message to a specific faction",
 			privs = { faction_user=true },
-			func = factions_chat.chathandler,
+			func = factionsmod_chat.chathandler,
 		}
 	)
 end
@@ -71,13 +71,13 @@ end
 -- name: cmdhandler(playername,parameter)
 --
 --! @brief chat command handler
---! @memberof factions_chat
+--! @memberof factionsmod_chat
 --! @private
 --
 --! @param playername name
 --! @param parameter data supplied to command
 -------------------------------------------------------------------------------
-function factions_chat.cmdhandler(playername,parameter)
+function factionsmod_chat.cmdhandler(playername,parameter)
 
 	local player = minetest.env:get_player_by_name(playername)
 	local params = parameter:split(" ")
@@ -87,11 +87,11 @@ function factions_chat.cmdhandler(playername,parameter)
 	if parameter == nil or
 		parameter == "" then
 		
-		local playerfactions = factions.get_factions(player)
+		local playerfactionsmod = factionsmod.get_factionsmod(player)
 		
-		local tosend = "Factions: " .. playername .. " factions:"
-		for i,v in ipairs(playerfactions) do
-			if i ~= #playerfactions then
+		local tosend = "factionsmod: " .. playername .. " factionsmod:"
+		for i,v in ipairs(playerfactionsmod) do
+			if i ~= #playerfactionsmod then
 				tosend = tosend .. " " .. v .. ","
 			else
 				tosend = tosend .. " " .. v
@@ -102,17 +102,17 @@ function factions_chat.cmdhandler(playername,parameter)
 	end
 	
 	if cmd == "claim" then
-		local playerfactions = factions.get_factions(player)
+		local playerfactionsmod = factionsmod.get_factionsmod(player)
 		
 		return
 	end
 	if cmd == "unclaim" then
 		return
 	end
-	--list all known factions
+	--list all known factionsmod
 	if cmd == "list" then
-		local list = factions.get_faction_list()
-		local tosend = "Factions: current available factions:"
+		local list = factionsmod.get_faction_list()
+		local tosend = "factionsmod: current available factionsmod:"
 		
 		for i,v in ipairs(list) do
 			if i ~= #list then
@@ -125,9 +125,9 @@ function factions_chat.cmdhandler(playername,parameter)
 		return
 	end
 	
-	--show factions mod version
+	--show factionsmod mod version
 	if cmd == "version" then
-		minetest.chat_send_player(playername, "Factions: version " .. factions_version , false)
+		minetest.chat_send_player(playername, "factionsmod: version " .. factionsmod_version , false)
 		return
 	end
 	
@@ -135,8 +135,8 @@ function factions_chat.cmdhandler(playername,parameter)
 	if cmd == "info" then
 		if params[2] ~= nil then
 			minetest.chat_send_player(playername,
-				"Factions: " .. params[2] .. ": " ..
-				factions.get_description(params[2]), false)
+				"factionsmod: " .. params[2] .. ": " ..
+				factionsmod.get_description(params[2]), false)
 			return
 		end
 	end
@@ -146,19 +146,19 @@ function factions_chat.cmdhandler(playername,parameter)
 			if params[3] ~= nil then
 				local toremove = minetest.env:get_player_by_name(params[3])
 				--allowed if faction_admin, admin of faction or player itself
-				if factions.is_admin(params[2],playername) and
+				if factionsmod.is_admin(params[2],playername) and
 					toremove ~= nil then
 					
-					factions.member_remove(params[2],toremove)
+					factionsmod.member_remove(params[2],toremove)
 					minetest.chat_send_player(playername, 
-						"Factions: " .. params[3] .. " has been removed from " 
+						"factionsmod: " .. params[3] .. " has been removed from " 
 						.. params[2], false)
 					return
 				end
 			else
-				factions.member_remove(params[2],player)
+				factionsmod.member_remove(params[2],player)
 				minetest.chat_send_player(playername, 
-						"Factions: You have left " .. params[2], false)
+						"factionsmod: You have left " .. params[2], false)
 				return
 			end
 		end
@@ -169,20 +169,20 @@ function factions_chat.cmdhandler(playername,parameter)
 		--create new faction
 		if cmd == "create" then
 			if params[2] ~= nil then
-				if factions.add_faction(params[2]) then
+				if factionsmod.add_faction(params[2]) then
 					minetest.chat_send_player(playername,
-						"Factions: created faction " .. params[2],
+						"factionsmod: created faction " .. params[2],
 						false)
-					if factions.member_add(params[2],minetest.env:get_player_by_name(playername)) then
+					if factionsmod.member_add(params[2],minetest.env:get_player_by_name(playername)) then
 						minetest.chat_send_player(playername,
-							"Factions: " .. playername .. " joined faction " ..
+							"factionsmod: " .. playername .. " joined faction " ..
 							params[2],
 							false)
 					end
 					return
 				else
 					minetest.chat_send_player(playername,
-						"Factions: FAILED to created faction " .. params[2],
+						"factionsmod: FAILED to created faction " .. params[2],
 						false)
 					return
 				end
@@ -193,23 +193,23 @@ function factions_chat.cmdhandler(playername,parameter)
 	if cmd == "join" then
 		if params[2] ~= nil then	
 				--check for invitation
-				if factions.is_invited(params[2],playername) then
-					if factions.member_add(params[2],player) then
+				if factionsmod.is_invited(params[2],playername) then
+					if factionsmod.member_add(params[2],player) then
 						minetest.chat_send_player(playername,
-							"Factions: joined faction " ..
+							"factionsmod: joined faction " ..
 							params[2],
 							false)
 						return
 					else
 						minetest.chat_send_player(playername,
-							"Factions: FAILED to join faction " ..
+							"factionsmod: FAILED to join faction " ..
 							params[2],
 							false)
 						return
 					end
 				else
 					minetest.chat_send_player(playername,
-						"Factions: you are not allowed to join " .. params[2],
+						"factionsmod: you are not allowed to join " .. params[2],
 						false)
 					return
 				end	
@@ -219,18 +219,18 @@ function factions_chat.cmdhandler(playername,parameter)
 	--all following commands require at least two parameters
 	if params[2] ~= nil then
 		if minetest.check_player_privs(playername,{ faction_admin=true }) or
-			factions.is_admin(params[2],playername) then
+			factionsmod.is_admin(params[2],playername) then
 			
 			--delete faction
 			if cmd == "delete" then
-				if factions.delete_faction(params[2]) then
+				if factionsmod.delete_faction(params[2]) then
 					minetest.chat_send_player(playername,
-						"Factions: deleted faction " .. params[2],
+						"factionsmod: deleted faction " .. params[2],
 						false)
 					return
 				else
 					minetest.chat_send_player(playername,
-						"Factions: FAILED to deleted faction " .. params[2],
+						"factionsmod: FAILED to deleted faction " .. params[2],
 						false)
 					return
 				end
@@ -245,14 +245,14 @@ function factions_chat.cmdhandler(playername,parameter)
 						value = true
 					end
 					
-					if factions.set_free(params[2],value) then
+					if factionsmod.set_free(params[2],value) then
 						minetest.chat_send_player(playername,
-							"Factions: free to join for " .. params[2] .. 
+							"factionsmod: free to join for " .. params[2] .. 
 							" has been set to " .. params[3],
 							false)
 					else
 						minetest.chat_send_player(playername,
-							"Factions: FAILED to set free to join for " ..
+							"factionsmod: FAILED to set free to join for " ..
 							params[2],
 							false)
 					end
@@ -269,14 +269,14 @@ function factions_chat.cmdhandler(playername,parameter)
 						value = true
 					end
 					
-					if factions.set_admin(params[2],params[3],value) then
+					if factionsmod.set_admin(params[2],params[3],value) then
 						minetest.chat_send_player(playername,
-							"Factions: adminstate of " .. params[3] .. 
+							"factionsmod: adminstate of " .. params[3] .. 
 							" has been set to " .. params[4],
 							false)
 					else
 						minetest.chat_send_player(playername,
-							"Factions: FAILED to set admin privileges for " ..
+							"factionsmod: FAILED to set admin privileges for " ..
 							params[3],
 							false)
 					end
@@ -292,15 +292,15 @@ function factions_chat.cmdhandler(playername,parameter)
 				for i=4, #params, 1 do
 					desc = desc .. " " .. params[i]
 				end
-				if factions.set_description(params[2],desc) then
+				if factionsmod.set_description(params[2],desc) then
 					minetest.chat_send_player(playername,
-							"Factions: updated description of faction " .. 
+							"factionsmod: updated description of faction " .. 
 							params[2],
 							false)
 					return
 				else
 					minetest.chat_send_player(playername,
-							"Factions: FAILED to update description of faction " .. 
+							"factionsmod: FAILED to update description of faction " .. 
 							params[2],
 							false)
 					return
@@ -310,19 +310,19 @@ function factions_chat.cmdhandler(playername,parameter)
 			if cmd == "invite" and
 				params[2] ~= nil and
 				params[3] ~= nil then
-				if factions.member_invite(params[2],params[3]) then
+				if factionsmod.member_invite(params[2],params[3]) then
 					minetest.chat_send_player(params[3],
-							"Factions: " .. params[3] .. 
+							"factionsmod: " .. params[3] .. 
 							" you have been invited to join faction " .. params[2],
 							false)
 					minetest.chat_send_player(playername,
-							"Factions: " .. params[3] .. 
+							"factionsmod: " .. params[3] .. 
 							" has been invited to join faction " .. params[2],
 							false)
 					return
 				else
 					minetest.chat_send_player(playername,
-							"Factions: FAILED to invite " .. params[3] ..
+							"factionsmod: FAILED to invite " .. params[3] ..
 							" to join faction " .. params[2],
 							false)
 					return
@@ -331,28 +331,28 @@ function factions_chat.cmdhandler(playername,parameter)
 		end
 	end
 
-	factions_chat.show_help(playername)
+	factionsmod_chat.show_help(playername)
 end
 
 -------------------------------------------------------------------------------
--- name: allfactions_chathandler(playername,parameter)
+-- name: allfactionsmod_chathandler(playername,parameter)
 --
 --! @brief chat handler
---! @memberof factions_chat
+--! @memberof factionsmod_chat
 --! @private
 --
 --! @param playername name
 --! @param parameter data supplied to command
 -------------------------------------------------------------------------------
-function factions_chat.allfactions_chathandler(playername,parameter)
+function factionsmod_chat.allfactionsmod_chathandler(playername,parameter)
 	
 	local player = minetest.env:get_player_by_name(playername)
 	
 	if player ~= nil then
 	  local recipients = {}
 	  
-	  for faction,value in pairs(factions.get_factions(player)) do
-		  for name,value in pairs(factions.dynamic_data.membertable[faction]) do
+	  for faction,value in pairs(factionsmod.get_factionsmod(player)) do
+		  for name,value in pairs(factionsmod.dynamic_data.membertable[faction]) do
 			  local object_to_check = mientest.env:get_player_by_name(name)
 			  
 			  if object_to_check ~= nil then
@@ -368,20 +368,20 @@ function factions_chat.allfactions_chathandler(playername,parameter)
 	  end
 	  return
 	end
-	factions_chat.show_help(playername)
+	factionsmod_chat.show_help(playername)
 end
 
 -------------------------------------------------------------------------------
 -- name: chathandler(playername,parameter)
 --
 --! @brief chat handler
---! @memberof factions_chat
+--! @memberof factionsmod_chat
 --! @private
 --
 --! @param playername name
 --! @param parameter data supplied to command
 -------------------------------------------------------------------------------
-function factions_chat.chathandler(playername,parameter)
+function factionsmod_chat.chathandler(playername,parameter)
 	
 	local player = minetest.env:get_player_by_name(playername)	
 	
@@ -396,17 +396,17 @@ function factions_chat.chathandler(playername,parameter)
 	  
 	  local valid_faction = false
 	  
-	  for faction,value in pairs(factions.get_factions(player)) do
+	  for faction,value in pairs(factionsmod.get_factionsmod(player)) do
 		  if target_faction == faction then
 			  valid_faction = true
 		  end
 	  end
 	  
 	  if faction ~= nil and valid_faction and
-	      factions.dynamic_data.membertable[faction] ~= nil then
-		  for name,value in pairs(factions.dynamic_data.membertable[faction]) do
+	      factionsmod.dynamic_data.membertable[faction] ~= nil then
+		  for name,value in pairs(factionsmod.dynamic_data.membertable[faction]) do
 			  local object_to_check = mientest.env:get_player_by_name(name)
-			  factions_chat.show_help(playername)
+			  factionsmod_chat.show_help(playername)
 			  if object_to_check ~= nil and
 				  name ~= playername then
 				  minetest.chat_send_player(name,playername ..": " .. text,false)
@@ -414,44 +414,44 @@ function factions_chat.chathandler(playername,parameter)
 		  end
 	  else
 		  minetest.chat_send_player(playername,
-			  "Factions: you're not a member of " .. dump(faction),false)
+			  "factionsmod: you're not a member of " .. dump(faction),false)
 	  end
 	  return
 	end
-	factions_chat.show_help(playername)
+	factionsmod_chat.show_help(playername)
 end
 
 -------------------------------------------------------------------------------
 -- name: show_help(playername,parameter)
 --
 --! @brief send help message to player
---! @memberof factions_chat
+--! @memberof factionsmod_chat
 --! @private
 --
 --! @param playername name
 -------------------------------------------------------------------------------
-function factions_chat.show_help(playername)
+function factionsmod_chat.show_help(playername)
 
 	local MSG = function(text)
 		minetest.chat_send_player(playername,text,false)
 	end
 	
-	MSG("Factions mod")
+	MSG("factionsmod mod")
 	MSG("Usage:")
 	MSG("\tUser commands:")
-	MSG("\t\t/factions                      -> info on your current factions")
-	MSG("\t\t/factions info <factionname>   -> show description of faction")
-	MSG("\t\t/factions list                 -> show list of factions")
-	MSG("\t\t/factions leave <factionname>  -> leave specified faction")
-	MSG("\t\t/factions join <factionname>   -> join specified faction")
-	MSG("\t\t/factions version              -> show version number of mod")
+	MSG("\t\t/factionsmod                      -> info on your current factionsmod")
+	MSG("\t\t/factionsmod info <factionname>   -> show description of faction")
+	MSG("\t\t/factionsmod list                 -> show list of factionsmod")
+	MSG("\t\t/factionsmod leave <factionname>  -> leave specified faction")
+	MSG("\t\t/factionsmod join <factionname>   -> join specified faction")
+	MSG("\t\t/factionsmod version              -> show version number of mod")
 	
 	MSG("\tAdmin commands:")
-	MSG("\t\t/factions create <factionname> -> create a new faction")
-	MSG("\t\t/factions delete <factionname> -> delete a faction faction")
-	MSG("\t\t/factions leave <factionname> <playername> -> remove player from faction")
-	MSG("\t\t/factions invite <factionname> <playername> -> invite player to faction")
-	MSG("\t\t/factions set_free <factionname> <value> -> set faction free to join")
-	MSG("\t\t/factions admin <factionname> <playername> <value> -> make player admin of faction")
-	MSG("\t\t/factions description <factionname> <text> -> set description for faction")
+	MSG("\t\t/factionsmod create <factionname> -> create a new faction")
+	MSG("\t\t/factionsmod delete <factionname> -> delete a faction faction")
+	MSG("\t\t/factionsmod leave <factionname> <playername> -> remove player from faction")
+	MSG("\t\t/factionsmod invite <factionname> <playername> -> invite player to faction")
+	MSG("\t\t/factionsmod set_free <factionname> <value> -> set faction free to join")
+	MSG("\t\t/factionsmod admin <factionname> <playername> <value> -> make player admin of faction")
+	MSG("\t\t/factionsmod description <factionname> <text> -> set description for faction")
 end

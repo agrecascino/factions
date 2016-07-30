@@ -53,6 +53,7 @@ function factions.add_faction(name)
 		factions.data.factions[name].base_reputation = {}
 		factions.data.factions[name].adminlist = {}
 		factions.data.factions[name].invitations = {}
+		factions.data.factions[name].owner = ""
 		
 		factions.dynamic_data.membertable[name] = {}
 		
@@ -262,6 +263,10 @@ function factions.member_add(name, object)
 			factions.data.objects[new_entry.name].factions[name] = true
 			factions.dynamic_data.membertable[name][new_entry.name] = true
 			factions.data.factions[name].invitations[new_entry.name] = nil
+			if factions.data.factions[name].owner == ""
+				factions.data.factions[name].owner = object.get_player_name()
+				factions.set_admin(name,object.get_player_name(), true)
+			end
 			factions.save()
 			return true
 		end
@@ -328,6 +333,10 @@ function factions.member_remove(name,object)
 		factions.data.factions[name].invitations[id] = nil
 		factions.save()
 		return true
+	end
+	if factions.data.objects[id].factions[name].owner == object.get_player_name()
+		factions.delete_faction(name)
+		
 	end
 
 	return false
@@ -766,13 +775,13 @@ function factions.load()
 	end
 
 	--create special faction players
-	factions.add_faction("players")
+	--factions.add_faction("players")
 
 	--autojoin players to faction players
 	minetest.register_on_joinplayer(
 		function(player)
 			if player:is_player() then
-				factions.member_add("players",player)
+				--factions.member_add("players",player)
 			end
 		end
 	)

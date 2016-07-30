@@ -54,8 +54,7 @@ function factionsmod.add_faction(name)
 		factionsmod.data.factionsmod[name].adminlist = {}
 		factionsmod.data.factionsmod[name].invitations = {}
 		factionsmod.data.factionsmod[name].owner = ""
-		factionsmod.data.factionsmod[name].chunk = {}	
-		
+		factionsmod.data.factionsmod[name].chunk = {}		
 		factionsmod.dynamic_data.membertable[name] = {}
 		
 		factionsmod.save()
@@ -115,6 +114,31 @@ function factionsmod.get_base_reputation(faction1,faction2)
 	return 0
 end
 
+function factionsmod.testifallowed(pos,digger)
+if next(factionsmod.get_faction_list()) ~= nil then
+			for k,v in pairs(factionsmod.get_faction_list()) do
+				--minetest.log("warning",v)
+				if factionsmod.data.factionsmod[v].chunk ~= nil then
+					for i =1, factionsmod.data.factionsmod[v].chunk.maxn() do
+						if factionsmod.data.factionsmod[v].chunk[i][1] == math.floor(pos.x/16) then
+							if factionsmod.data.factionsmod[v].chunk[i][2] == math.floor(pos.z/16) then
+								if digger == nil then
+								for k2,v2 in pairs(factionsmod.get_factionsmod(digger)) do
+									if k2 ~= nil and k2 ~= v then
+											return true
+									end
+								end
+								else
+									return true
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	return
+end
 -------------------------------------------------------------------------------
 -- name: set_description(name,description)
 --
@@ -234,9 +258,30 @@ end
 --!
 --! @return true/false (succesfully added faction or not)
 -------------------------------------------------------------------------------
-function factionsmod.claim()
+function factionsmod.claim(name,player)
+				--if factionsmod.data.factionsmod[name].chunk ~= nil then
+					local pos = player:getpos()
+					local is_owned = factionsmod.testifallowed(pos,nil)
+					if is_owned ~= true then
+					table.insert(factionsmod.data.factionsmod[name].chunk[table.getn(chunk) + 1],{})
+					factionsmod.data.factionsmod[name].chunk[table.getn(chunk)][0] = math.floor(pos.x/16.0)
+					factionsmod.data.factionsmod[name].chunk[table.getn(chunk)][1] = math.floor(pos.z/16.0)
+					end
+				--end
 end
-function factionsmod.unclaim()
+function factionsmod.unclaim(name,player)
+	local pos = player:getpos()
+	local is_owned = factionsmod.testifallowed(pos,nil)
+	if is_owned then
+	for i =1, factionsmod.data.factionsmod[name].chunk.maxn() do
+	if chunk[i][0] == math.floor(pos.x/16.0) and chunk[i][1] == math.floor(pos.y/16.0) then
+	table.remove(factionsmod.data.factionsmod[name].chunk,i)
+
+	end
+	end
+	
+		
+	end
 end
 function factionsmod.member_add(name, object)
 	local new_entry = {}
@@ -779,19 +824,16 @@ function factionsmod.load()
 			minetest.log("error","MOD factionsmod: unable to save factionsmod world specific data!: " .. error)
 		end
 	end
-
+	
 	--create special faction players
 	--factionsmod.add_faction("players")
 	minetest.register_on_dignode(function(pos,oldnode,digger)
-						if next(factionsmod.data.factionsmod) ~= nil then
-		for k,v in pairs(factionsmod.data.factionsmod) do
-			for i =1, v.chunk.maxn() do
-				if v.chunk[i][1] == math.floor(pos.x/16) then
-				end
-			end
-		end
+		return factionsmod.testifallowed(pos,digger)
 	end
-						end
+	)
+	minetest.register_on_placenode(function(pos,oldnode,digger,nothanks,noreally,please)
+		return factionsmod.testifallowed(pos,digger)
+	end
 	)
 	--autojoin players to faction players
 	minetest.register_on_joinplayer(

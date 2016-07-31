@@ -229,6 +229,7 @@ function factionsmod_chat.cmdhandler(playername,parameter)
 			
 			--delete faction
 			if cmd == "delete" then
+				factionsmod.member_remove(params[2],player)
 				if factionsmod.delete_faction(params[2]) then
 					minetest.chat_send_player(playername,
 						"factionsmod: deleted faction " .. params[2],

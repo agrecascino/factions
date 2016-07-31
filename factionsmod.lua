@@ -238,6 +238,9 @@ end
 -------------------------------------------------------------------------------
 function factionsmod.delete_faction(name)
 
+	for k,v in pairs(factionsmod.dynamic_data.membertable[name]) do
+		factionsmod.member_remove(name,v)
+	end
 	factionsmod.data.factionsmod[name] = nil
 	
 	factionsmod.save()

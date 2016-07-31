@@ -119,25 +119,28 @@ if next(factionsmod.get_faction_list()) ~= nil then
 			for k,v in pairs(factionsmod.get_faction_list()) do
 				--minetest.log("warning",v)
 				if factionsmod.data.factionsmod[v].chunk ~= nil then
-					for i =1, factionsmod.data.factionsmod[v].chunk.maxn() do
-						if factionsmod.data.factionsmod[v].chunk[i][1] == math.floor(pos.x/16) then
-							if factionsmod.data.factionsmod[v].chunk[i][2] == math.floor(pos.z/16) then
+					for i =1, #factionsmod.data.factionsmod[v].chunk do
+						if factionsmod.data.factionsmod[v].chunk[i][1] == math.floor(pos.x/16.0) then
+							if factionsmod.data.factionsmod[v].chunk[i][2] == math.floor(pos.z/16.0) then
+								print('test')
 								if digger == nil then
-								for k2,v2 in pairs(factionsmod.get_factionsmod(digger)) do
-									if k2 ~= nil and k2 ~= v then
-											return true
+								return false
+								end
+								for k2,v2 in pairs(factionsmod.get_factionsmod(digger)) do							
+									print(v2)
+									if v2 == nil or v2 ~= v then
+											print('not allowed')
+											return false
 									end
 								end
-								else
-									return true
-								end
+								
 							end
 						end
 					end
 				end
 			end
 		end
-	return
+	return true
 end
 -------------------------------------------------------------------------------
 -- name: set_description(name,description)
@@ -261,20 +264,23 @@ end
 function factionsmod.claim(name,player)
 				--if factionsmod.data.factionsmod[name].chunk ~= nil then
 					local pos = player:getpos()
-					local is_owned = factionsmod.testifallowed(pos,nil)
-					if is_owned ~= true then
+					local is_not_owned = factionsmod.testifallowed(pos,nil)
+					if is_not_owned == true then
+					print(name)
+					print(player)
+					print(dump(factionsmod.data.factionsmod))
 					table.insert(factionsmod.data.factionsmod[name].chunk,{})
-					factionsmod.data.factionsmod[name].chunk[#factionsmod.data.factionsmod[name].chunk][0] = math.floor(pos.x/16.0)
-					factionsmod.data.factionsmod[name].chunk[#factionsmod.data.factionsmod[name].chunk][1] = math.floor(pos.z/16.0)
+					factionsmod.data.factionsmod[name].chunk[#factionsmod.data.factionsmod[name].chunk][1] = math.floor(pos.x/16.0)
+					factionsmod.data.factionsmod[name].chunk[#factionsmod.data.factionsmod[name].chunk][2] = math.floor(pos.z/16.0)
 					end
 				--end
 end
 function factionsmod.unclaim(name,player)
 	local pos = player:getpos()
-	local is_owned = factionsmod.testifallowed(pos,nil)
-	if is_owned then
-	for i =1, factionsmod.data.factionsmod[name].chunk.maxn() do
-	if chunk[i][0] == math.floor(pos.x/16.0) and chunk[i][1] == math.floor(pos.y/16.0) then
+	local is_not_owned = factionsmod.testifallowed(pos,nil)
+	if is_not_owned == false then
+	for i =1, #factionsmod.data.factionsmod[name].chunk do
+	if chunk[i][1] == math.floor(pos.x/16.0) and chunk[i][2] == math.floor(pos.z/16.0) then
 	table.remove(factionsmod.data.factionsmod[name].chunk,i)
 
 	end
@@ -794,7 +800,8 @@ function factionsmod.load()
 					factionsmod.data.factionsmod[key].adminlist = value.adminlist
 					factionsmod.data.factionsmod[key].open = value.open
 					factionsmod.data.factionsmod[key].invitations = value.invitations
-					
+					factionsmod.data.factionsmod[key].chunk = value.chunk
+					factionsmod.data.factionsmod[key].owner = value.owner
 					factionsmod.data.factionsmod[key].reputation = {}
 					for repkey,repvalue in pairs(value.reputation) do
 						if temp_objects[repkey] == nil then
@@ -827,14 +834,14 @@ function factionsmod.load()
 	
 	--create special faction players
 	--factionsmod.add_faction("players")
-	minetest.register_on_dignode(function(pos,oldnode,digger)
-		return factionsmod.testifallowed(pos,digger)
+	old_is_protected = minetest.is_protected
+	function minetest.is_protected(pos,name)
+	local player = minetest.get_player_by_name(name)
+	if factionsmod.testifallowed(pos,player) ~=  true then
+	return true
 	end
-	)
-	minetest.register_on_placenode(function(pos,oldnode,digger,nothanks,noreally,please)
-		return factionsmod.testifallowed(pos,digger)
+	return old_is_protected(pos,name)
 	end
-	)
 	--autojoin players to faction players
 	minetest.register_on_joinplayer(
 		function(player)

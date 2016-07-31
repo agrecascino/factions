@@ -103,12 +103,16 @@ function factionsmod_chat.cmdhandler(playername,parameter)
 	
 	if cmd == "claim" then
 		local playerfaction = factionsmod.get_factionsmod(player)
+		if next(playerfaction) ~= nil then
 		factionsmod.claim(playerfaction[1],player)
+		end
 		return
 	end
 	if cmd == "unclaim" then
 		local playerfaction = factionsmod.get_factionsmod(player)
+		if next(playerfaction) ~= nil then
 		factionsmod.unclaim(playerfaction[1],player)
+		end
 		return
 	end
 	--list all known factionsmod

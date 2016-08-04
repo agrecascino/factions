@@ -922,9 +922,9 @@ function factionsmod.load()
 	minetest.register_globalstep(
 		function(dtime)
 			if next(factionsmod.get_faction_list()) ~= nil then
-			for k in #factionsmod.get_faction_list() do
-			print(factionsmod.get_faction_list()[k])
-			factionsmod.data.factionsmod[factionsmod.get_faction_list()[k]].power = factionsmod.data.factionsmod[factionsmod.get_faction_list()[k]].power + (dtime/120.0)
+			for k,v in pairs(factionsmod.get_faction_list()) do
+			print(v)
+			factionsmod.data.factionsmod[v].power = factionsmod.data.factionsmod[v].power + (dtime/120.0)
 			end
 			end
 		end)

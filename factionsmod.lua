@@ -45,6 +45,9 @@ factionsmod.dbg_lvl3 = function() end --factionsmod.print  -- cyclic trace
 --!
 --! @return true/false (succesfully added faction or not)
 -------------------------------------------------------------------------------
+function factionsmod.fix_powercap(name)
+	factionsmod.data.factionsmod[name].powercap = #factionsmod.dynamic_data.membertable[name] + 10
+end
 function factionsmod.add_faction(name)
 
 	if factionsmod.data.factionsmod[name] == nil then
@@ -54,6 +57,9 @@ function factionsmod.add_faction(name)
 		factionsmod.data.factionsmod[name].adminlist = {}
 		factionsmod.data.factionsmod[name].invitations = {}
 		factionsmod.data.factionsmod[name].owner = ""
+		factionsmod.data.factionsmod[name].land = 0
+		factionsmod.data.factionsmod[name].power = 10
+		factionsmod.data.factionsmod[name].powercap = 10
 		factionsmod.data.factionsmod[name].chunk = {}		
 		factionsmod.dynamic_data.membertable[name] = {}
 		
@@ -115,6 +121,9 @@ function factionsmod.get_base_reputation(faction1,faction2)
 end
 
 function factionsmod.testifallowed(pos,digger)
+if pos.y < -512 then
+return true
+end
 if next(factionsmod.get_faction_list()) ~= nil then
 			for k,v in pairs(factionsmod.get_faction_list()) do
 				--minetest.log("warning",v)
@@ -141,6 +150,27 @@ if next(factionsmod.get_faction_list()) ~= nil then
 			end
 		end
 	return true
+end
+function factionsmod.findchunkowner(pos)
+if pos.y < -512 then
+return ""
+end
+if next(factionsmod.get_faction_list()) ~= nil then
+			for k,v in pairs(factionsmod.get_faction_list()) do
+				--minetest.log("warning",v)
+				if factionsmod.data.factionsmod[v].chunk ~= nil then
+					for i =1, #factionsmod.data.factionsmod[v].chunk do
+						if factionsmod.data.factionsmod[v].chunk[i][1] == math.floor(pos.x/16.0) then
+							if factionsmod.data.factionsmod[v].chunk[i][2] == math.floor(pos.z/16.0) then
+								return v
+								
+							end
+						end
+					end
+				end
+			end
+		end
+	return ""
 end
 -------------------------------------------------------------------------------
 -- name: set_description(name,description)
@@ -264,6 +294,17 @@ end
 --!
 --! @return true/false (succesfully added faction or not)
 -------------------------------------------------------------------------------
+function factionsmod.takeover(name,player)
+local pos = player:getpos()
+local is_not_owned = factionsmod.testifallowed(pos,player)
+if is_not_owned == false then
+local owner = factionsmod.findchunkowner(pos)
+if factionsmod.data.factionsmod[owner].land > factionsmod.data.factionsmod[owner].power then
+factionsmod.unclaim(owner,player)
+factionsmod.claim(name,player)
+end
+end
+end
 function factionsmod.claim(name,player)
 				--if factionsmod.data.factionsmod[name].chunk ~= nil then
 					local pos = player:getpos()
@@ -328,6 +369,8 @@ function factionsmod.member_add(name, object)
 				factionsmod.data.factionsmod[name].owner = object:get_player_name()
 				factionsmod.set_admin(name,object:get_player_name(), true)
 			end
+			factionsmod.data.factionsmod[name].power = factionsmod.data.factionsmod[name].power + 1
+			factionsmod.data.factionsmod[name].powercap = factionsmod.data.factionsmod[name].powercap + 1
 			factionsmod.save()
 			return true
 		end
@@ -388,6 +431,8 @@ function factionsmod.member_remove(name,object)
 		if factionsmod.data.factionsmod[name].owner == object:get_player_name() then
 			factionsmod.delete_faction(name)
 		end
+		factionsmod.data.factionsmod[name].power = factionsmod.data.factionsmod[name].power - 1
+		factionsmod.data.factionsmod[name].powercap = factionsmod.data.factionsmod[name].powercap - 1
 		factionsmod.save()
 		return true
 	end
@@ -416,7 +461,7 @@ end
 --! @return true/false (succesfully changed privileges)
 -------------------------------------------------------------------------------
 function factionsmod.set_admin(name,playername,value)
-	mobf_assert_backtrace(type(playername) == "string")
+	--mobf_assert_backtrace(type(playername) == "string")
 	if factionsmod.data.factionsmod[name] ~= nil then
 		if value then
 			factionsmod.data.factionsmod[name].adminlist[playername] = true
@@ -742,6 +787,11 @@ end
 --! @memberof factionsmod
 --! @private
 -------------------------------------------------------------------------------
+function factionsmod.enumerateland(name)
+	if factionsmod.data.factionsmod[name] ~= nil then
+		factionsmod.data.factionsmod[name].land = #factionsmod.data.factionsmod[name].chunk
+	end
+end
 function factionsmod.save()
 
 	--saving is done much more often than reading data to avoid delay
@@ -804,8 +854,12 @@ function factionsmod.load()
 					factionsmod.data.factionsmod[key].open = value.open
 					factionsmod.data.factionsmod[key].invitations = value.invitations
 					factionsmod.data.factionsmod[key].chunk = value.chunk
+					factionsmod.data.factionsmod[key].power = value.power
+					factionsmod.data.factionsmod[key].powercap = value.powercap
 					factionsmod.data.factionsmod[key].owner = value.owner
+					factionsmod.data.factionsmod[key].land = value.land
 					factionsmod.data.factionsmod[key].reputation = {}
+					factionsmod.enumerateland(key)
 					for repkey,repvalue in pairs(value.reputation) do
 						if temp_objects[repkey] == nil then
 							factionsmod.data.factionsmod[key].reputation[repkey] = repvalue
@@ -822,6 +876,7 @@ function factionsmod.load()
 					if value then
 						factionsmod.dynamic_data.membertable[name][id] = true
 					end
+					
 				end
 			end
 		end
@@ -837,6 +892,10 @@ function factionsmod.load()
 	
 	--create special faction players
 	--factionsmod.add_faction("players")
+	if next(factionsmod.get_faction_list()) ~= nil then
+			for k,v in pairs(factionsmod.get_faction_list()) do
+			factionsmod.fix_powercap(v)
+	end		end
 	old_is_protected = minetest.is_protected
 	function minetest.is_protected(pos,name)
 	local player = minetest.get_player_by_name(name)
@@ -846,6 +905,29 @@ function factionsmod.load()
 	return old_is_protected(pos,name)
 	end
 	--autojoin players to faction players
+	minetest.register_on_dieplayer(
+		function(player)
+		if next(factionsmod.get_factionsmod(object)) ~= nil then
+		for k,v in pairs(factionsmod.get_factionsmod(object)) do
+			if v ~= nil then
+				if factionsmod.data.factionsmod[v].power - 1 >= -factionsmod.data.factionsmod[v].powercap then
+				factionsmod.data.factionsmod[v].power = factionsmod.data.factionsmod[v].power - 1
+				return true
+				end
+			end
+		end
+	end
+		end
+	)
+	minetest.register_globalstep(
+		function(dtime)
+			if next(factionsmod.get_faction_list()) ~= nil then
+			for k in #factionsmod.get_faction_list() do
+			print(factionsmod.get_faction_list()[k])
+			--factionsmod.data.factionsmod[v].power = factionsmod.data.factionsmod[v].power + (dtime/120.0)
+			end
+			end
+		end)
 	minetest.register_on_joinplayer(
 		function(player)
 			if player:is_player() then
@@ -854,3 +936,4 @@ function factionsmod.load()
 		end
 	)
 end
+

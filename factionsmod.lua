@@ -135,6 +135,9 @@ if next(factionsmod.get_faction_list()) ~= nil then
 								if digger == nil then
 								return false
 								end
+								if next(factionsmod.get_factionsmod(digger)) == nil then
+return false
+end
 								for k2,v2 in pairs(factionsmod.get_factionsmod(digger)) do							
 									print(v2)
 									if v2 == nil or v2 ~= v then
@@ -923,8 +926,9 @@ function factionsmod.load()
 		function(dtime)
 			if next(factionsmod.get_faction_list()) ~= nil then
 			for k,v in pairs(factionsmod.get_faction_list()) do
-			print(v)
+			if factionsmod.data.factionsmod[v].power + (dtime/120.0) <= factionsmod.data.factionsmod[v].powercap then
 			factionsmod.data.factionsmod[v].power = factionsmod.data.factionsmod[v].power + (dtime/120.0)
+			end
 			end
 			end
 		end)

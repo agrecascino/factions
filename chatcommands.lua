@@ -115,6 +115,13 @@ function factionsmod_chat.cmdhandler(playername,parameter)
 		end
 		return
 	end
+	if cmd == "takeover" then
+		local playerfaction = factionsmod.get_factionsmod(player)
+		if next(playerfaction) ~= nil then
+		factionsmod.takeover(playerfaction[1],player)
+		end
+		return
+	end
 	--list all known factionsmod
 	if cmd == "list" then
 		local list = factionsmod.get_faction_list()

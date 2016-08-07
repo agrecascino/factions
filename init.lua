@@ -20,7 +20,7 @@ core.log("action", "MOD: factions (by sapier) loading ...")
 factions_modpath = minetest.get_modpath("factions")
 
 
-dofile (factions_modpath .. "/factionsmod.lua")
+dofile (factions_modpath .. "/factions.lua")
 dofile (factions_modpath .. "/chatcommands.lua")
 
 factions.load()

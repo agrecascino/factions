@@ -1,10 +1,10 @@
 -------------------------------------------------------------------------------
--- factionsmod Mod by Sapier
+-- factions Mod by Sapier
 --
 -- License WTFPL
 --
 --! @file init.lua
---! @brief factionsmod mod to be used by other mods
+--! @brief factions mod to be used by other mods
 --! @copyright Sapier
 --! @author Sapier
 --! @date 2013-05-08
@@ -12,18 +12,18 @@
 -- Contact sapier a t gmx net
 -------------------------------------------------------------------------------
 
-local factionsmod_version = "0.1.6"
+local factions_version = "0.1.6"
 
-core.log("action", "MOD: factionsmod (by sapier) loading ...")
+core.log("action", "MOD: factions (by sapier) loading ...")
 
 --!path of mod
-factionsmod_modpath = minetest.get_modpath("factionsmod")
+factions_modpath = minetest.get_modpath("factions")
 
 
-dofile (factionsmod_modpath .. "/factionsmod.lua")
-dofile (factionsmod_modpath .. "/chatcommands.lua")
+dofile (factions_modpath .. "/factionsmod.lua")
+dofile (factions_modpath .. "/chatcommands.lua")
 
-factionsmod.load()
-factionsmod_chat.init()
+factions.load()
+factions_chat.init()
 
-core.log("action","MOD: factionsmod (by sapier) " .. factionsmod_version .. " loaded.")
+core.log("action","MOD: factions (by sapier) " .. factions_version .. " loaded.")

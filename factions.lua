@@ -1,10 +1,10 @@
 -------------------------------------------------------------------------------
--- factionsmod Mod by Sapier
+-- factions Mod by Sapier
 --
 -- License WTFPL
 --
---! @file factionsmod.lua
---! @brief factionsmod core file containing datastorage
+--! @file factions.lua
+--! @brief factions core file containing datastorage
 --! @copyright Sapier
 --! @author Sapier
 --! @date 2013-05-08
@@ -13,33 +13,33 @@
 -------------------------------------------------------------------------------
 
 --read some basic information
-local factionsmod_worldid = minetest.get_worldpath()
+local factions_worldid = minetest.get_worldpath()
 
---! @class factionsmod
---! @brief main class for factionsmod
-factionsmod = {}
+--! @class factions
+--! @brief main class for factions
+factions = {}
 
 --! @brief runtime data
-factionsmod.factions = {}
-factionsmod.chunks = {}
-factionsmod.players = {}
+factions.factions = {}
+factions.chunks = {}
+factions.players = {}
 
-factionsmod.print = function(text)
-	print("factionsmod: " .. dump(text))
+factions.print = function(text)
+	print("factions: " .. dump(text))
 end
 
-factionsmod.dbg_lvl1 = function() end --factionsmod.print  -- errors
-factionsmod.dbg_lvl2 = function() end --factionsmod.print  -- non cyclic trace
-factionsmod.dbg_lvl3 = function() end --factionsmod.print  -- cyclic trace
+factions.dbg_lvl1 = function() end --factionsmod.print  -- errors
+factions.dbg_lvl2 = function() end --factionsmod.print  -- non cyclic trace
+factions.dbg_lvl3 = function() end --factionsmod.print  -- cyclic trace
 
-factionsmod.factions = {}
+factions.factions = {}
 --- settings
-factionsmod.lower_claimable_height = -512
+factions.lower_claimable_height = -512
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
-factionsmod.can_create_faction = function(name)
-    if factionsmod.factions[name] then
+factions.can_create_faction = function(name)
+    if factions.factions[name] then
         return false
     else
         return true
@@ -48,7 +48,7 @@ end
 
 ---------------------
 --! @brief create a faction object
-factionsmod.new_faction = function(name)
+factions.new_faction = function(name)
     local faction = {
         name = name,
         power = 0.,
@@ -85,22 +85,22 @@ factionsmod.new_faction = function(name)
             self:on_player_leave(player)
         end,
         claim_chunk = function(self, chunkpos)
-            factionsmod.chunks[chunkpos] = self.name
+            factions.chunks[chunkpos] = self.name
             self.land[chunkpos] = true
             self:on_claim_chunk(chunkpos)
         end,
         unclaim_chunk = function(self, chunkpos)
-            factionsmod.chunks[chunkpos] = nil
+            factions.chunks[chunkpos] = nil
             self.land[chunkpos] = nil
             self:on_unclaim_chunks(chunkpos)
         end,
         disband = function(self)
-            factionsmod.factions[self.name] = nil
+            factions.factions[self.name] = nil
             for i in ipairs(self.players) do -- remove players affiliation
-                factionsmod.players[self.players[i]] = nil
+                factions.players[self.players[i]] = nil
             end
             for k, v in self.land do -- remove chunk claims
-                factionsmod.chunks[v] = nil
+                factions.chunks[v] = nil
             end
             self:on_disband()
         end,
@@ -226,21 +226,21 @@ factionsmod.new_faction = function(name)
             --TODO: implement
         end,
     }
-    factionsmod[name] = faction
+    factions[name] = faction
     return faction
 end
 
 --??????????????
-function factionsmod.fix_powercap(name)
-	factionsmod.data.factionsmod[name].powercap = #factionsmod.dynamic_data.membertable[name] + 10
+function factions.fix_powercap(name)
+	factions.data.factionsmod[name].powercap = #factionsmod.dynamic_data.membertable[name] + 10
 end
 --??????????????
 
-function factionsmod.get_chunk(pos)
-    return factionsmod.chunks[factionsmod.get_chunkpos(pos)]
+function factions.get_chunk(pos)
+    return factions.chunks[factionsmod.get_chunkpos(pos)]
 end
 
-function factionsmod.get_chunkpos(pos)
+function factions.get_chunkpos(pos)
     return {math.floor(pos.x / 16.), math.floor(pos.z / 16.)}
 
 
@@ -248,16 +248,16 @@ function factionsmod.get_chunkpos(pos)
 -- name: add_faction(name)
 --
 --! @brief add a faction
---! @memberof factionsmod
+--! @memberof factions
 --! @public
 --
 --! @param name of faction to add
 --!
 --! @return faction object/false (succesfully added faction or not)
 -------------------------------------------------------------------------------
-function factionsmod.add_faction(name)
-        if factionsmod.can_create_faction(name) then
-            local fac = factionsmod.new_faction(name)
+function factions.add_faction(name)
+        if factions.can_create_faction(name) then
+            local fac = factions.new_faction(name)
             fac:on_create()
             return fac
         else
@@ -268,17 +268,17 @@ end
 -------------------------------------------------------------------------------
 -- name: get_faction_list()
 --
---! @brief get list of factionsmod
---! @memberof factionsmod
+--! @brief get list of factions
+--! @memberof factions
 --! @public
 --!
---! @return list of factionsmod
+--! @return list of factions
 -------------------------------------------------------------------------------
-function factionsmod.get_faction_list()
+function factions.get_faction_list()
 
 	local retval = {}
 	
-	for key,value in pairs(factionsmod.factions) do
+	for key,value in pairs(factions.factions) do
 		table.insert(retval,key)
 	end
 	
@@ -289,23 +289,23 @@ end
 -- name: save()
 --
 --! @brief save data to file
---! @memberof factionsmod
+--! @memberof factions
 --! @private
 -------------------------------------------------------------------------------
-function factionsmod.save()
+function factions.save()
 
 	--saving is done much more often than reading data to avoid delay
 	--due to figuring out which data to save and which is temporary only
 	--all data is saved here
 	--this implies data needs to be cleant up on load
 	
-	local file,error = io.open(factionsmod_worldid .. "/" .. "factionsmod.conf","w")
+	local file,error = io.open(factions_worldid .. "/" .. "factionsmod.conf","w")
 	
 	if file ~= nil then
-		file:write(minetest.serialize(factionsmod.factions))
+		file:write(minetest.serialize(factions.factions))
 		file:close()
 	else
-		minetest.log("error","MOD factionsmod: unable to save factionsmod world specific data!: " .. error)
+		minetest.log("error","MOD factions: unable to save factionsmod world specific data!: " .. error)
 	end
 	
 end
@@ -314,23 +314,23 @@ end
 -- name: load()
 --
 --! @brief load data from file
---! @memberof factionsmod
+--! @memberof factions
 --! @private
 --
 --! @return true/false
 -------------------------------------------------------------------------------
-function factionsmod.load()
-	local file,error = io.open(factionsmod_worldid .. "/" .. "factionsmod.conf","r")
+function factions.load()
+	local file,error = io.open(factions_worldid .. "/" .. "factionsmod.conf","r")
 	
 	if file ~= nil then
 		local raw_data = file:read("*a")
-		factionsmod.factions = minetest.deserialize(raw_data)
-        for facname, faction in pairs(factionsmod.factions) do
+		factions.factions = minetest.deserialize(raw_data)
+        for facname, faction in pairs(factions.factions) do
             for i in ipairs(faction.players) do
-                factionsmod.players[faction.players[i]] = facname
+                factions.players[faction.players[i]] = facname
             end
             for chunkpos, val in pairs(faction.land) do
-                factionsmod.chunks[chunkpos] = val
+                factions.chunks[chunkpos] = val
             end
         end
 		file:close()

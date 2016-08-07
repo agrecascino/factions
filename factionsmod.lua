@@ -53,7 +53,7 @@ factionsmod.new_faction = function(name)
         name = name,
         power = 0.,
         players = {},
-        ranks = {["leader"] = {"disband", "claim", "playerlist", "build", "edit"},
+        ranks = {["leader"] = {"disband", "claim", "playerlist", "build", "edit", "ranks"},
                  ["member"] = {"build"}
                 },
         leader = nil,
@@ -64,7 +64,8 @@ factionsmod.new_faction = function(name)
         land = {},
         allies = {},
         enemies = {},
-        join_free = false
+        join_free = false,
+        spawn = nil,
 
         ----------------------
         --  methods
@@ -157,7 +158,24 @@ factionsmod.new_faction = function(name)
         end,
         end_enemy = function(self, faction)
             self.enemies[faction] = nil
-            self:on_end_enemy[faction]
+            self:on_end_enemy(faction)
+        end,
+        set_spawn = function(self, pos)
+            self.spawn = pos
+            self:on_set_spawn()
+        end,
+        add_rank = function(self, rank, perms)
+            self.ranks[rank] = perms
+            self:on_new_rank(rank)
+        end,
+        delete_rank = function(self, rank, newrank)
+            for player, r in pairs(self.players) do
+                if r == rank then
+                    self.players[player] = newrank
+                end
+            end
+            self.ranks[rank] = nil
+            self:on_delete_rank(rank, newrank)
         end,
 
         -----------------------
@@ -196,6 +214,15 @@ factionsmod.new_faction = function(name)
             --TODO: implement
         end,
         on_end_alliance = function(self, faction)
+            --TODO: implement
+        end,
+        on_set_spawn = function(self)
+            --TODO: implement
+        end,
+        on_add_rank = function(self, rank)
+            --TODO: implement
+        end,
+        on_delete_rank = function(self, rank, newrank)
             --TODO: implement
         end,
     }

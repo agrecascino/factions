@@ -30,6 +30,7 @@ factionsmod.register_command = function(cmd_name, cmd)
         faction_permissions = {},
         global_privileges = {},
         format = {},
+        infaction = true,
         description = "This command has no description.",
         run = function(self, player, argv)
             -- check global privileges
@@ -79,9 +80,14 @@ factionsmod.register_command = function(cmd_name, cmd)
                 table.insert(args.other, argv[i])
             end
 
-            -- checks permissions
+            -- checks if player in faction
             local player_faction = factionsmod.players[faction]
+            if not player_faction and self.infaction then
+                --TODO: error message
+                return false
+            end
 
+            -- checks permissions
             if #faction_permissions > 1 and not player_faction then
                 minetest.chat_send_player(player, "You are not part of any faction")
                 return false
@@ -205,10 +211,7 @@ factionsmod.register_command("list", {
 factionsmod.register_command("version", {
     description = "Displays mod version.",
     on_success = function(player, faction, pos, chunkpos, args)
-        if cmd == "version" then
-            minetest.chat_send_player(player, "factionsmod: version " .. factionsmod_version , false)
-        return true
-        end
+        minetest.chat_send_player(player, "factionsmod: version " .. factionsmod_version , false)
     end
 })
 
@@ -227,14 +230,9 @@ factionsmod.register_command("info", {
 factionsmod.register_command("leave", {
     description = "Leave your faction."
     on_success = function(player, faction, pos, chunkpos, args)
-        if faction then
-            faction:remove_player(player)
-        else
-            --TODO: error (not in a faction)
-            return false
-        end
+        faction:remove_player(player)
         --TODO: message?
-    return true
+        return true
     end
 })
 
@@ -259,6 +257,7 @@ factionsmod.register_command("kick", {
 --create new faction
 factionsmod.register_command("create", {
     format = {"string"},
+    infaction = false,
     description = "Create a new faction.",
     on_success = function(player, faction, pos, chunkpos, args)
         if faction then
@@ -281,6 +280,7 @@ factionsmod.register_command("create", {
 factionsmod.register_commmand("join", {
     format = {"faction"},
     description = "Join a faction.",
+    infaction = false,
     on_success = function(player, faction, pos, chunkpos, args)
         local new_faction = args.factions[1]
         if new_faction:can_join(player) then
@@ -366,6 +366,74 @@ factionsmod.register_command("delete", {
     on_success = function(player, faction, pos, chunkpos, args)
         args.factions[1]:disband()
         --TODO: message
+        return true
+    end
+})
+
+factionsmod.register_command("ranks", {
+    description = "List ranks within your faction",
+    on_success = function(player, faction, pos, chunkpos, args)
+        if not faction then
+            --TODO: error message
+            return false
+        end
+        for rank, permissions in pairs(faction.ranks) do
+            minetest.chat_send_player(player:get_player_name(), rank..": "..table.concat(permissions, " "))
+        end
+        return true
+    end
+})
+
+factionsmod.register_command("who", {
+    description = "List players in your faction, and their ranks.",
+    on_success = function(player, faction, pos, chunkpos, args)
+        if not faction then
+            --TODO: error message
+            return false
+        end
+        for player, rank in ipairs(faction.players) do
+            minetest.chat_send_player(player:get_player_name(), player.." ("..rank..")")
+        end
+        return true
+    end
+})
+
+factionsmod.register_command("newrank", {
+    description = "Add a new rank.",
+    format = {"string"},
+    faction_permissions = {"ranks"},
+    on_success = function(player, faction, pos, chunkpos, args)
+        local rank = args.strings[1]
+        if faction.ranks[rank] then
+            --TODO: rank already exists
+            return false
+        end
+        faction:new_rank(rank, args.other)
+        return true
+    end
+})
+
+factionsmod.register_command("delrank", {
+    description = "Replace and delete a rank.",
+    format = {"string", "string"},
+    faction_permissions = {"ranks"},
+    on_success = function(player, faction, pos, chunkpos, args)
+        local rank = args.strings[1]
+        local newrank = args.string[2]
+        if not faction.ranks[rank] or not faction.ranks[rank] then
+            --TODO: error (one of either ranks do not exist)
+            return false
+        end
+        faction:delete_rank(rank, newrank)
+        return true
+    end
+})
+
+factionsmod.register_command("setspawn", {
+    description = "Set the faction's spawn",
+    faction_permissions = {"spawn"},
+    on_success = function(player, faction, pos, chunkpos, args)
+        faction:set_spawn(pos)
         return true
     end
 })

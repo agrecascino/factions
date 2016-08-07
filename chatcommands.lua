@@ -1,10 +1,10 @@
 -------------------------------------------------------------------------------
--- factionsmod Mod by Sapier
+-- factions Mod by Sapier
 --
 -- License WTFPL
 --
 --! @file chatcommnd.lua
---! @brief factionsmod chat interface
+--! @brief factions chat interface
 --! @copyright Sapier
 --! @author Sapier
 --! @date 2013-05-08
@@ -12,20 +12,20 @@
 -- Contact sapier a t gmx net
 -------------------------------------------------------------------------------
 
---! @class factionsmod_chat
+--! @class factions_chat
 --! @brief chat interface class
-factionsmod_chat = {}
+factions_chat = {}
 
 -------------------------------------------------------------------------------
 -- name: init()
 --
 --! @brief initialize chat interface
---! @memberof factionsmod_chat
+--! @memberof factions_chat
 --! @public
 -------------------------------------------------------------------------------
 
-factionsmod.register_command = function(cmd_name, cmd)
-    factionsmod.commands[cmd_name] = { -- default command
+factions.register_command = function(cmd_name, cmd)
+    factions.commands[cmd_name] = { -- default command
         name = cmd_name,
         faction_permissions = {},
         global_privileges = {},
@@ -54,7 +54,7 @@ factionsmod.register_command = function(cmd_name, cmd)
                 local argtype = format[i]
                 local arg = argv[i]
                 if argtype == "faction" then
-                    local fac = factionsmod.factions[arg]
+                    local fac = factions.factions[arg]
                     if not fac then
                         --TODO: error (faction required)
                         return false
@@ -81,7 +81,7 @@ factionsmod.register_command = function(cmd_name, cmd)
             end
 
             -- checks if player in faction
-            local player_faction = factionsmod.players[faction]
+            local player_faction = factions.players[faction]
             if not player_faction and self.infaction then
                 --TODO: error message
                 return false
@@ -96,7 +96,7 @@ factionsmod.register_command = function(cmd_name, cmd)
 
             -- get some more data
             local pos = minetest.get_player_by_name(player):getpos()
-            local chunkpos = factionsmod.get_chunk_pos(pos)
+            local chunkpos = factions.get_chunk_pos(pos)
             return self.on_success(player, player_faction, pos, chunkpos, args)
         end,
         on_success = function(player, faction, pos, chunkpos, args)
@@ -105,13 +105,13 @@ factionsmod.register_command = function(cmd_name, cmd)
     }
     -- override defaults
     for k, v in pairs(cmd) do
-        factionsmod.commands[cmd_name][k] = v
+        factions.commands[cmd_name][k] = v
     end
 end
 
 
 
-function factionsmod_chat.init()
+function factions_chat.init()
 
 	minetest.register_privilege("faction_user",
 		{
@@ -122,17 +122,17 @@ function factionsmod_chat.init()
 	
 	minetest.register_privilege("faction_admin",
 		{
-			description = "this user is allowed to create or delete factionsmod",
+			description = "this user is allowed to create or delete factions",
 			give_to_singleplayer = true,
 		}
 	)
 	
-	minetest.register_chatcommand("factionsmod",
+	minetest.register_chatcommand("factions",
 		{
 			params = "<cmd> <parameter 1> .. <parameter n>",
 			description = "faction administration functions",
 			privs = { interact=true },
-			func = factionsmod_chat.cmdhandler,
+			func = factions_chat.cmdhandler,
 		}
 	)
 	
@@ -142,7 +142,7 @@ function factionsmod_chat.init()
 			params = "<factionname> text",
 			description = "send message to a specific faction",
 			privs = { faction_user=true },
-			func = factionsmod_chat.chathandler,
+			func = factions_chat.chathandler,
 		}
 	)
 end
@@ -152,11 +152,11 @@ end
 -- R E G I S T E R E D   C O M M A N D S  |
 -------------------------------------------
 
-factionsmod.register_command ("claim", {
+factions.register_command ("claim", {
     faction_permissions = {"claim"},
     description = "Claim the plot of land you're on.",
     on_success = function(player, faction, pos, chunkpos, args)
-        local chunk = factionsmod.chunk[chunkpos]
+        local chunk = factions.chunk[chunkpos]
         if not chunk then
             --TODO: success message
             player_faction:claim_chunk(chunkpos)
@@ -173,11 +173,11 @@ factionsmod.register_command ("claim", {
     end
 })
 
-factionsmod.register_command("unclaim", {
+factions.register_command("unclaim", {
     faction_permissions = {"claim"},
     description = "Unclaim the plot of land you're on.",
     on_success = function(player, faction, pos, chunkpos, args)
-        local chunk = factionsmod.chunk[chunkpos]
+        local chunk = factions.chunk[chunkpos]
         if chunk ~= player_faction.name then
             --TODO: error (not your faction's chunk)
             return false
@@ -189,11 +189,11 @@ factionsmod.register_command("unclaim", {
 })
 
 --list all known factions
-factionsmod.register_command("list", {
+factions.register_command("list", {
     description = "List all registered factions.",
     on_success = function(player, faction, pos, chunkpos, args)
-        local list = factionsmod.get_faction_list()
-        local tosend = "factionsmod: current available factionsmod:"
+        local list = factions.get_faction_list()
+        local tosend = "factions: current available factionsmod:"
         
         for i,v in ipairs(list) do
             if i ~= #list then
@@ -207,27 +207,27 @@ factionsmod.register_command("list", {
     end
 })
 
---show factionsmod mod version
-factionsmod.register_command("version", {
+--show factions mod version
+factions.register_command("version", {
     description = "Displays mod version.",
     on_success = function(player, faction, pos, chunkpos, args)
-        minetest.chat_send_player(player, "factionsmod: version " .. factionsmod_version , false)
+        minetest.chat_send_player(player, "factions: version " .. factionsmod_version , false)
     end
 })
 
 --show description  of faction
-factionsmod.register_command("info", {
+factions.register_command("info", {
     format = {"faction"},
     description = "Shows a faction's description.",
     on_success = function(player, faction, pos, chunkpos, args)
         minetest.chat_send_player(player,
-            "factionsmod: " .. args.factions[1].name .. ": " ..
+            "factions: " .. args.factions[1].name .. ": " ..
             args.factions[1].description, false)
         return true
     end
 })
 
-factionsmod.register_command("leave", {
+factions.register_command("leave", {
     description = "Leave your faction."
     on_success = function(player, faction, pos, chunkpos, args)
         faction:remove_player(player)
@@ -236,13 +236,13 @@ factionsmod.register_command("leave", {
     end
 })
 
-factionsmod.register_command("kick", {
+factions.register_command("kick", {
     faction_permissions = {"playerlist"},
     format = {"player"},
     description = "Kick a player from your faction.",
     on_success = function(player, faction, pos, chunkpos, args)
         local victim = args.players[1]
-        if factionsmod.players[victim.name] == faction.name then
+        if factions.players[victim.name] == faction.name then
             and victim.name ~= faction.leader -- can't kick da king
             faction:remove_player(player)
             --TODO: message?
@@ -255,7 +255,7 @@ factionsmod.register_command("kick", {
 })
 
 --create new faction
-factionsmod.register_command("create", {
+factions.register_command("create", {
     format = {"string"},
     infaction = false,
     description = "Create a new faction.",
@@ -265,8 +265,8 @@ factionsmod.register_command("create", {
             return false
         end
         local factioname = args.strings[1]
-        if factionsmod.can_create_faction(factionname) then
-            new_faction = factionsmod.create_faction(faction)
+        if factions.can_create_faction(factionname) then
+            new_faction = factions.create_faction(faction)
             new_faction:add_player(player)
             new_faction:set_leader(player)
             return true
@@ -277,7 +277,7 @@ factionsmod.register_command("create", {
     end
 })
 
-factionsmod.register_commmand("join", {
+factions.register_commmand("join", {
     format = {"faction"},
     description = "Join a faction.",
     infaction = false,
@@ -297,7 +297,7 @@ factionsmod.register_commmand("join", {
     end
 })
 
-factionsmod.register_command("disband", {
+factions.register_command("disband", {
     faction_permissions = {"disband"},
     description = "Disband your faction.",
     on_success = function(player, faction, pos, chunkpos, args)
@@ -307,7 +307,7 @@ factionsmod.register_command("disband", {
     end
 })
 
-factionsmod.register_command("close", {
+factions.register_command("close", {
     faction_permissions = {"playerslist"},
     description = "Make your faction invite-only.",
     on_success = function(player, faction, pos, chunkpos, args)
@@ -317,7 +317,7 @@ factionsmod.register_command("close", {
     end
 })
 
-factionsmod.register_command("open", {
+factions.register_command("open", {
     faction_permissions = {"playerslist"},
     description = "Allow any player to join your faction.",
     on_success = function(player, faction, pos, chunkpos, args)
@@ -327,7 +327,7 @@ factionsmod.register_command("open", {
     end
 })
 
-factionsmod.register_command("description", {
+factions.register_command("description", {
     faction_permissions = {"description"},
     description = "Set your faction's description",
     on_success = function(player, faction, pos, chunkpos, args)
@@ -337,7 +337,7 @@ factionsmod.register_command("description", {
     end
 })
 
-factionsmod.register_command("invite", {
+factions.register_command("invite", {
     format = {"player"},
     faction_permissions = {"playerslist"},
     description = "Invite a player to your faction.",
@@ -348,7 +348,7 @@ factionsmod.register_command("invite", {
     end
 })
 
-factionsmod.register_command("uninvite", {
+factions.register_command("uninvite", {
     format = {"player"},
     faction_permissions = {"playerslist"},
     description = "Revoke a player's invite.",
@@ -359,7 +359,7 @@ factionsmod.register_command("uninvite", {
     end
 })
 
-factionsmod.register_command("delete", {
+factions.register_command("delete", {
     global_privileges = {"faction_admin"},
     format = {"faction"},
     description = "Delete a faction.",
@@ -370,7 +370,7 @@ factionsmod.register_command("delete", {
     end
 })
 
-factionsmod.register_command("ranks", {
+factions.register_command("ranks", {
     description = "List ranks within your faction",
     on_success = function(player, faction, pos, chunkpos, args)
         if not faction then
@@ -384,7 +384,7 @@ factionsmod.register_command("ranks", {
     end
 })
 
-factionsmod.register_command("who", {
+factions.register_command("who", {
     description = "List players in your faction, and their ranks.",
     on_success = function(player, faction, pos, chunkpos, args)
         if not faction then
@@ -398,7 +398,7 @@ factionsmod.register_command("who", {
     end
 })
 
-factionsmod.register_command("newrank", {
+factions.register_command("newrank", {
     description = "Add a new rank.",
     format = {"string"},
     faction_permissions = {"ranks"},
@@ -413,7 +413,7 @@ factionsmod.register_command("newrank", {
     end
 })
 
-factionsmod.register_command("delrank", {
+factions.register_command("delrank", {
     description = "Replace and delete a rank.",
     format = {"string", "string"},
     faction_permissions = {"ranks"},
@@ -429,7 +429,7 @@ factionsmod.register_command("delrank", {
     end
 })
 
-factionsmod.register_command("setspawn", {
+factions.register_command("setspawn", {
     description = "Set the faction's spawn",
     faction_permissions = {"spawn"},
     on_success = function(player, faction, pos, chunkpos, args)
@@ -442,17 +442,17 @@ factionsmod.register_command("setspawn", {
 -- name: cmdhandler(playername,parameter)
 --
 --! @brief chat command handler
---! @memberof factionsmod_chat
+--! @memberof factions_chat
 --! @private
 --
 --! @param playername name
 --! @param parameter data supplied to command
 -------------------------------------------------------------------------------
-function factionsmod_chat.cmdhandler(playername,parameter)
+function factions_chat.cmdhandler(playername,parameter)
 
 	local player = minetest.env:get_player_by_name(playername)
 	local params = parameter:split(" ")
-    local player_faction = factionsmod.players[playersname]
+    local player_faction = factions.players[playersname]
 
 	if parameter == nil or
 		parameter == "" then
@@ -464,7 +464,7 @@ function factionsmod_chat.cmdhandler(playername,parameter)
 		return
 	end
 
-	local cmd = factionsmod.commands[params[1]]
+	local cmd = factions.commands[params[1]]
     if not cmd then
         --TODO: error (unknown command)
     end
@@ -482,25 +482,25 @@ end
 -- name: show_help(playername,parameter)
 --
 --! @brief send help message to player
---! @memberof factionsmod_chat
+--! @memberof factions_chat
 --! @private
 --
 --! @param playername name
 -------------------------------------------------------------------------------
-function factionsmod_chat.show_help(playername)
+function factions_chat.show_help(playername)
 
 	local MSG = function(text)
 		minetest.chat_send_player(playername,text,false)
 	end
 	
-	MSG("factionsmod mod")
+	MSG("factions mod")
 	MSG("Usage:")
-    for k, v in pairs(factionsmod.commands) do
+    for k, v in pairs(factions.commands) do
         local args = {}
         for i in ipairs(v.format) do
             table.insert(args, v.format[i])
         end
-        MSG{"\t/factionsmod "..k.." <"..table.concat(args, "> <").."> : "..v.description}
+        MSG{"\t/factions "..k.." <"..table.concat(args, "> <").."> : "..v.description}
     end
 end
 

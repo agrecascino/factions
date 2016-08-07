@@ -43,7 +43,7 @@ factions.can_create_faction = function(name)
         return false
     else
         return true
-    end,
+    end
 end
 
 ---------------------
@@ -125,7 +125,7 @@ factions.new_faction = function(name)
             self:on_player_invited(player)
         end,
         revoke_invite = function(self, player)
-            self.invited_player[player = nil
+            self.invited_player[player] = nil
             self:on_revoke_invite(player)
         end,
         is_invited = function(self, player)
@@ -151,7 +151,7 @@ factions.new_faction = function(name)
         end,
         new_enemy = function(self, faction)
             self.enemies[faction] = true
-            self:on_new_enemy[faction]
+            self:on_new_enemy(faction)
             if self.allies[faction] then
                 self:end_alliance(faction)
             end
@@ -226,7 +226,7 @@ factions.new_faction = function(name)
             --TODO: implement
         end,
     }
-    factions[name] = faction
+    factions.factions[name] = faction
     return faction
 end
 
@@ -242,6 +242,7 @@ end
 
 function factions.get_chunkpos(pos)
     return {math.floor(pos.x / 16.), math.floor(pos.z / 16.)}
+end
 
 
 -------------------------------------------------------------------------------
@@ -256,13 +257,13 @@ function factions.get_chunkpos(pos)
 --! @return faction object/false (succesfully added faction or not)
 -------------------------------------------------------------------------------
 function factions.add_faction(name)
-        if factions.can_create_faction(name) then
-            local fac = factions.new_faction(name)
-            fac:on_create()
-            return fac
-        else
-            return nil
-        end,
+    if factions.can_create_faction(name) then
+        local fac = factions.new_faction(name)
+        fac:on_create()
+        return fac
+    else
+        return nil
+    end
 end
 
 -------------------------------------------------------------------------------

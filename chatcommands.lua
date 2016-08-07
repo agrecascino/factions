@@ -16,6 +16,8 @@
 --! @brief chat interface class
 factions_chat = {}
 
+factions.commands = {}
+
 -------------------------------------------------------------------------------
 -- name: init()
 --
@@ -228,7 +230,7 @@ factions.register_command("info", {
 })
 
 factions.register_command("leave", {
-    description = "Leave your faction."
+    description = "Leave your faction.",
     on_success = function(player, faction, pos, chunkpos, args)
         faction:remove_player(player)
         --TODO: message?
@@ -242,8 +244,8 @@ factions.register_command("kick", {
     description = "Kick a player from your faction.",
     on_success = function(player, faction, pos, chunkpos, args)
         local victim = args.players[1]
-        if factions.players[victim.name] == faction.name then
-            and victim.name ~= faction.leader -- can't kick da king
+        if factions.players[victim.name] == faction.name
+            and victim.name ~= faction.leader then -- can't kick da king
             faction:remove_player(player)
             --TODO: message?
             return true
@@ -277,7 +279,7 @@ factions.register_command("create", {
     end
 })
 
-factions.register_commmand("join", {
+factions.register_command("join", {
     format = {"faction"},
     description = "Join a faction.",
     infaction = false,
@@ -342,7 +344,7 @@ factions.register_command("invite", {
     faction_permissions = {"playerslist"},
     description = "Invite a player to your faction.",
     on_success = function(player, faction, pos, chunkpos, args)
-        faction:invite_player(args.players[1]:get_player_name)
+        faction:invite_player(args.players[1]:get_player_name())
         --TODO: message
         return true
     end
@@ -353,7 +355,7 @@ factions.register_command("uninvite", {
     faction_permissions = {"playerslist"},
     description = "Revoke a player's invite.",
     on_success = function(player, faction, pos, chunkpos, args)
-        faction:revoke_invite(args.players[1]:get_player_name)
+        faction:revoke_invite(args.players[1]:get_player_name())
         --TODO: message
         return true
     end

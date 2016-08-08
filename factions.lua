@@ -50,7 +50,7 @@ function factions.Faction:new(faction)
     faction = {
         power = 0.,
         players = {},
-        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "description", "ranks", "spawn", "banner"},
+        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "description", "ranks", "spawn", "banner", "promote"},
                  ["moderator"] = {"claim", "playerslist", "build", "spawn"},
                  ["member"] = {"build"}
                 },
@@ -227,10 +227,13 @@ function factions.Faction.delete_rank(self, rank, newrank)
     self:on_delete_rank(rank, newrank)
     factions.save()
 end
-
 function factions.Faction.set_banner(self, newbanner)
     self.banner = newbanner
     self:on_new_banner()
+end
+function factions.Faction.promote(self, member, rank)
+    self.players[member] = rank
+    self:on_promote(member)
 end
 
 --------------------------
@@ -281,6 +284,9 @@ function factions.Faction.on_delete_rank(self, rank, newrank)
     --TODO: implement
 end
 function factions.Faction.on_new_banner(self)
+    --TODO: implement
+end
+function factions.Faction.on_promote(self, member)
     --TODO: implement
 end
 

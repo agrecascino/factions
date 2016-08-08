@@ -29,14 +29,16 @@ factions.register_command = function(cmd_name, cmd)
         infaction = true,
         description = "This command has no description.",
         run = function(self, player, argv)
-            --[[ check global privileges
             if self.global_privileges then
-                local bool, missing_privs = minetest.check_player_privs(player, self.global_privileges)
-                if not bool then
-                    send_error(player, "Missing global privileges: "..table.concat(missing_privs, ", "))
-                    return false
+                local tmp = {}
+                for i in ipairs(self.global_privileges) do
+                    tmp[self.global_privileges[i]] = true
                 end
-            end]]
+                local bool, missing_privs = minetest.check_player_privs(player, tmp)
+                if not bool then
+                    send_error(player, "Unauthorized.")
+                end
+            end
             -- checks argument formats
             local args = {
                 factions = {},
@@ -62,7 +64,7 @@ factions.register_command = function(cmd_name, cmd)
                 elseif argtype == "player" then
                     local pl = minetest.get_player_by_name(arg)
                     if not pl then
-                        send_error(player, "Player is not invited.")
+                        send_error(player, "Player is not online.")
                         --TODO: track existing players for offsync invites and the like
                         return false
                     else
@@ -87,7 +89,7 @@ factions.register_command = function(cmd_name, cmd)
                 return false
             end
             player_faction = factions.factions[player_faction]
-            if faction_permissions then
+            if self.faction_permissions then
                 for i in ipairs(self.faction_permissions) do
                     if not player_faction:has_permission(player, self.faction_permissions[i]) then
                         send_error(player, "You don't have permissions to do that.")
@@ -240,7 +242,7 @@ factions.register_command("leave", {
 })
 
 factions.register_command("kick", {
-    faction_permissions = {"playerlist"},
+    faction_permissions = {"playerslist"},
     format = {"player"},
     description = "Kick a player from your faction.",
     on_success = function(player, faction, pos, chunkpos, args)
@@ -251,7 +253,7 @@ factions.register_command("kick", {
             --TODO: message?
             return true
         else
-            --TODO: error (player is leader or in faction)
+            send_error(player, "Cannot kick player "..victim.name)
             return false
         end
     end
@@ -332,7 +334,7 @@ factions.register_command("description", {
     faction_permissions = {"description"},
     description = "Set your faction's description",
     on_success = function(player, faction, pos, chunkpos, args)
-        faction:set_description(args.other.concat(" "))
+        faction:set_description(table.concat(args.other," "))
         --TODO: message
         return true
     end
@@ -375,10 +377,6 @@ factions.register_command("delete", {
 factions.register_command("ranks", {
     description = "List ranks within your faction",
     on_success = function(player, faction, pos, chunkpos, args)
-        if not faction then
-            --TODO: error message
-            return false
-        end
         for rank, permissions in pairs(faction.ranks) do
             minetest.chat_send_player(player, rank..": "..table.concat(permissions, " "))
         end

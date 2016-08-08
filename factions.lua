@@ -48,21 +48,6 @@ end
 
 
 factions.Faction = {
-    power = 0.,
-    players = {},
-    ranks = {["leader"] = {"disband", "claim", "playerlist", "build", "edit", "ranks"},
-             ["member"] = {"build"}
-            },
-    leader = nil,
-    default_rank = "member",
-    default_leader_rank = "leader",
-    description = "Default faction description.",
-    invited_players = {},
-    land = {},
-    allies = {},
-    enemies = {},
-    join_free = false,
-    spawn = nil,
 }
 
 factions.Faction.__index = factions.Faction
@@ -71,7 +56,7 @@ function factions.Faction:new(faction)
     faction = {
         power = 0.,
         players = {},
-        ranks = {["leader"] = {"disband", "claim", "playerlist", "build", "edit", "ranks"},
+        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "edit", "ranks"},
                  ["member"] = {"build"}
                 },
         leader = nil,

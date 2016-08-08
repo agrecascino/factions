@@ -179,12 +179,12 @@ factions.register_command("unclaim", {
     faction_permissions = {"claim"},
     description = "Unclaim the plot of land you're on.",
     on_success = function(player, faction, pos, chunkpos, args)
-        local chunk = factions.chunk[chunkpos]
-        if chunk ~= player_faction.name then
-            --TODO: error (not your faction's chunk)
+        local chunk = factions.chunks[chunkpos]
+        if chunk ~= faction.name then
+            send_error(player, "This chunk does not belong to you.")
             return false
         else
-            player_faction:unclaim_chunk(chunkpos)
+            faction:unclaim_chunk(chunkpos)
             return true
         end
     end
@@ -269,7 +269,7 @@ factions.register_command("create", {
         end
         local factionname = args.strings[1]
         if factions.can_create_faction(factionname) then
-            new_faction = factions.new_faction(factionname)
+            new_faction = factions.new_faction(factionname, nil)
             new_faction:add_player(player, new_faction.default_leader_rank)
             return true
         else
@@ -441,7 +441,7 @@ factions.register_command("setspawn", {
 })
 
 factions.register_command("where", {
-    description = "See whose chunk you stand on",
+    description = "See whose chunk you stand on.",
     infaction = false,
     on_success = function(player, faction, pos, chunkpos, args)
         local chunk = factions.chunks[chunkpos]
@@ -452,6 +452,14 @@ factions.register_command("where", {
             minetest.chat_send_player(player, "This chunk belongs to "..chunk)
         end
         return true
+    end
+})
+
+factions.register_command("help", {
+    description = "Shows help for commands.",
+    infaction = false,
+    on_success = function(player, faction, pos, chunkpos, args)
+        factions_chat.show_help(player)
     end
 })
 
@@ -483,7 +491,7 @@ factions_chat.cmdhandler = function (playername,parameter)
 
 	local cmd = factions.commands[params[1]]
     if not cmd then
-        send_error(player, "Unknown command.")
+        send_error(playername, "Unknown command.")
         return false
     end
 
@@ -518,7 +526,7 @@ function factions_chat.show_help(playername)
         for i in ipairs(v.format) do
             table.insert(args, v.format[i])
         end
-        MSG{"\t/factions "..k.." <"..table.concat(args, "> <").."> : "..v.description}
+        MSG("\t/factions "..k.." <"..table.concat(args, "> <").."> : "..v.description)
     end
 end
 

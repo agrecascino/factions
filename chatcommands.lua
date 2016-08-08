@@ -143,9 +143,9 @@ init_commands = function()
 	
 	minetest.register_chatcommand("f",
 		{
-			params = "<factionname> text",
-			description = "send message to a specific faction",
-			privs = { faction_user=true },
+			params = "<command> parameters",
+			description = "Factions commands. Type /f help for available commands.",
+            privs = { interact=true},
 			func = factions_chat.cmdhandler,
 		}
 	)
@@ -465,6 +465,22 @@ factions.register_command("spawn", {
             return true
         else
             minetest.chat_send_player(player, "Your faction has no spawn set.")
+            return false
+        end
+    end
+})
+
+factions.register_command("promote", {
+    description = "Promotes a player to a rank",
+    format = {"player", "string"},
+    faction_permissions = {"promote"},
+    on_success = function(player, faction, pos, chunkpos, args)
+        local rank = args.strings[1]
+        if faction.ranks[rank] then
+            faction:promote(args.players[1], rank)
+            return true
+        else
+            send_error(player, "The specified rank does not exist.")
             return false
         end
     end

@@ -24,17 +24,11 @@ factions.factions = {}
 factions.chunks = {}
 factions.players = {}
 
-factions.print = function(text)
-	print("factions: " .. dump(text))
-end
-
-factions.dbg_lvl1 = function() end --factions.print  -- errors
-factions.dbg_lvl2 = function() end --factions.print  -- non cyclic trace
-factions.dbg_lvl3 = function() end --factions.print  -- cyclic trace
 
 factions.factions = {}
 --- settings
 factions.lower_laimable_height = -512
+factions.power_per_chunk = 0.
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
@@ -118,14 +112,14 @@ end
 function factions.Faction.claim_chunk(self, chunkpos)
     factions.chunks[chunkpos] = self.name
     self.land[chunkpos] = true
-    self.decrease_power(factions.power_per_chunk)
+    self:decrease_power(factions.power_per_chunk)
     self:on_claim_chunk(chunkpos)
     factions.save()
 end
 function factions.Faction.unclaim_chunk(self, chunkpos)
     factions.chunks[chunkpos] = nil
     self.land[chunkpos] = nil
-    self.increase_power(factions.power_per_chunk)
+    self:increase_power(factions.power_per_chunk)
     self:on_unclaim_chunk(chunkpos)
     factions.save()
 end
@@ -396,8 +390,29 @@ minetest.register_on_dieplayer(
     end
 )
 
+local lastUpdate = 0.
+
 minetest.register_globalstep(
     function(dtime)
+        lastUpdate = lastUpdate + dtime
+        if lastUpdate > .5 then
+            local playerslist = minetest.get_connected_players()
+            for i in pairs(playerslist) do
+                local player = playerslist[i]
+                local chunkpos = factions.get_chunk_pos(player:getpos())
+                local faction = factions.chunks[chunkpos]
+                player:hud_remove("factionLand")
+                player:hud_add({
+                    hud_elem_type = "text",
+                    name = "factionLand",
+                    number = 0xFFFFFF,
+                    position = {x=0.1, y = .98},
+                    text = faction or "Wilderness",
+                    scale = {x=1, y=1},
+                    alignment = {x=0, y=0},
+                })
+            end
+        end
     end
 )
 minetest.register_on_joinplayer(

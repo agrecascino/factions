@@ -28,7 +28,7 @@ factions.players = {}
 factions.factions = {}
 --- settings
 factions.lower_laimable_height = -512
-factions.power_per_chunk = 0.
+factions.power_per_chunk = .5
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
@@ -50,7 +50,7 @@ function factions.Faction:new(faction)
     faction = {
         power = 0.,
         players = {},
-        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "description", "ranks", "spawn"},
+        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "description", "ranks", "spawn", "banner"},
                  ["moderator"] = {"claim", "playerslist", "build", "spawn"},
                  ["member"] = {"build"}
                 },
@@ -228,6 +228,11 @@ function factions.Faction.delete_rank(self, rank, newrank)
     factions.save()
 end
 
+function factions.Faction.set_banner(self, newbanner)
+    self.banner = newbanner
+    self:on_new_banner()
+end
+
 --------------------------
 -- callbacks for events --
 function factions.Faction.on_create(self)  --! @brief called when the faction is added to the global faction list
@@ -273,6 +278,9 @@ function factions.Faction.on_add_rank(self, rank)
     --TODO: implement
 end
 function factions.Faction.on_delete_rank(self, rank, newrank)
+    --TODO: implement
+end
+function factions.Faction.on_new_banner(self)
     --TODO: implement
 end
 

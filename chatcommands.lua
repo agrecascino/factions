@@ -443,12 +443,7 @@ factions.register_command("where", {
     infaction = false,
     on_success = function(player, faction, pos, chunkpos, args)
         local chunk = factions.chunks[chunkpos]
-        minetest.chat_send_player(player, "You are standing on chunk "..chunkpos)
-        if not chunk then
-            minetest.chat_send_player(player, "This chunk is free.")
-        else
-            minetest.chat_send_player(player, "This chunk belongs to "..chunk)
-        end
+        minetest.chat_send_player(player, "You are standing on chunk "..chunkpos..", part of "..chunk or "Wilderness"..",")
         return true
     end
 })
@@ -463,13 +458,26 @@ factions.register_command("help", {
 
 factions.register_command("spawn", {
     description = "Shows your faction's spawn",
-    infaction = true,
     on_success = function(player, faction, pos, chunkpos, args)
         if faction.spawn then
             minetest.chat_send_player(player, "Spawn is at ("..table.concat(faction.spawn, ", ")..")")
             return true
         else
             minetest.chat_send_player(player, "Your faction has no spawn set.")
+        end
+    end
+})
+
+factions.register_command("convert", {
+    description = "Load factions in the old format",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"string"},
+    on_success = function(player, faction, pos, chunkpos, args)
+        if factions.convert(args.strings[1]) then
+            minetest.chat_send_player(player, "Factions successfully converted.")
+        else
+            minetest.chat_send_player(player, "Error.")
         end
     end
 })

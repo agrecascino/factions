@@ -161,7 +161,7 @@ factions.register_command ("claim", {
     description = "Claim the plot of land you're on.",
     on_success = function(player, faction, pos, chunkpos, args)
         local chunk = factions.chunks[chunkpos]
-        if not chunk then
+        if not chunk  and faction:can_claim_chunk(chunkpos) then
             minetest.chat_send_player(player, "Claming chunk "..chunkpos)
             faction:claim_chunk(chunkpos)
             return true

@@ -62,7 +62,9 @@ function factions.Faction:new(faction)
         land = {},
         allies = {},
         enemies = {},
+        attacked_chunks = {},
         join_free = false,
+        banner = "bg_white.png",
     } or faction
     setmetatable(faction, self)
     return faction

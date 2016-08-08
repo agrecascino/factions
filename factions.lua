@@ -136,11 +136,11 @@ function factions.Faction.unclaim_chunk(self, chunkpos)
     factions.save()
 end
 function factions.Faction.disband(self)
-    for i in ipairs(self.players) do -- remove players affiliation
-        factions.players[self.players[i]] = nil
+    for k, _ in pairs(self.players) do -- remove players affiliation
+        factions.players[k] = nil
     end
     for k, v in pairs(self.land) do -- remove chunk claims
-        factions.chunks[v] = nil
+        factions.chunks[k] = nil
     end
     self:on_disband()
     factions.factions[self.name] = nil

@@ -28,7 +28,7 @@ factions.players = {}
 factions.factions = {}
 --- settings
 factions.lower_laimable_height = -512
-factions.power_per_chunk = 0.
+factions.power_per_chunk = .5
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
@@ -50,7 +50,7 @@ function factions.Faction:new(faction)
     faction = {
         power = 0.,
         players = {},
-        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "description", "ranks", "spawn"},
+        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "description", "ranks", "spawn", "banner"},
                  ["moderator"] = {"claim", "playerslist", "build", "spawn"},
                  ["member"] = {"build"}
                 },
@@ -62,7 +62,9 @@ function factions.Faction:new(faction)
         land = {},
         allies = {},
         enemies = {},
+        attacked_chunks = {},
         join_free = false,
+        banner = "bg_white.png",
     } or faction
     setmetatable(faction, self)
     return faction
@@ -226,6 +228,11 @@ function factions.Faction.delete_rank(self, rank, newrank)
     factions.save()
 end
 
+function factions.Faction.set_banner(self, newbanner)
+    self.banner = newbanner
+    self:on_new_banner()
+end
+
 --------------------------
 -- callbacks for events --
 function factions.Faction.on_create(self)  --! @brief called when the faction is added to the global faction list
@@ -273,16 +280,11 @@ end
 function factions.Faction.on_delete_rank(self, rank, newrank)
     --TODO: implement
 end
+function factions.Faction.on_new_banner(self)
+    --TODO: implement
+end
 
 --??????????????
-function factions.fix_powercap(name)
-	factions.data.factions[name].powercap = #factions.dynamic_data.membertable[name] + 10
-end
---??????????????
-
-function factions.get_chunk(pos)
-    return factions.chunks[factions.get_chunkpos(pos)]
-end
 
 function factions.get_chunk_pos(pos)
     return math.floor(pos.x / 16.)..","..math.floor(pos.z / 16.)
@@ -383,6 +385,42 @@ function factions.load()
         end
 		file:close()
     end
+end
+
+function factions.convert(filename)
+    local file, error = io.open(factions_worldid .. "/" .. filename, "r")
+    if not file then
+        minetest.chat_send_all("Cannot load file "..filename..". "..error)
+        return false
+    end
+    local raw_data = file:read("*a")
+    local data = minetest.deserialize(raw_data)
+    local factionsmod = data.factionsmod
+    local objects = data.objects
+    for faction, attrs in pairs(factionsmod) do
+        local newfac = factions.new_faction(faction)
+        newfac:add_player(attrs.owner, "leader")
+        for player, _ in pairs(attrs.adminlist) do
+            if not newfac.players[player] then
+                newfac:add_player(player, "moderator")
+            end
+        end
+        for player, _ in pairs(attrs.invitations) do
+            newfac:invite_player(player)
+        end
+        for i in ipairs(attrs.chunk) do
+            local chunkpos = table.concat(attrs.chunk[i],",")
+            newfac:claim_chunk(chunkpos)
+        end
+    end
+    for player, attrs in pairs(objects) do
+        local facname = attrs.factionsmod
+        local faction = factions.factions[facname]
+        if faction then
+            faction:add_player(player)
+        end
+    end
+    return true
 end
 			
 minetest.register_on_dieplayer(

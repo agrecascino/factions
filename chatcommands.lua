@@ -443,12 +443,7 @@ factions.register_command("where", {
     infaction = false,
     on_success = function(player, faction, pos, chunkpos, args)
         local chunk = factions.chunks[chunkpos]
-        minetest.chat_send_player(player, "You are standing on chunk "..chunkpos)
-        if not chunk then
-            minetest.chat_send_player(player, "This chunk is free.")
-        else
-            minetest.chat_send_player(player, "This chunk belongs to "..chunk)
-        end
+        minetest.chat_send_player(player, "You are standing on chunk "..chunkpos..", part of "..chunk or "Wilderness"..",")
         return true
     end
 })
@@ -458,18 +453,55 @@ factions.register_command("help", {
     infaction = false,
     on_success = function(player, faction, pos, chunkpos, args)
         factions_chat.show_help(player)
+        return true
     end
 })
 
 factions.register_command("spawn", {
     description = "Shows your faction's spawn",
-    infaction = true,
     on_success = function(player, faction, pos, chunkpos, args)
         if faction.spawn then
             minetest.chat_send_player(player, "Spawn is at ("..table.concat(faction.spawn, ", ")..")")
             return true
         else
             minetest.chat_send_player(player, "Your faction has no spawn set.")
+            return false
+        end
+    end
+})
+
+factions.register_command("power", {
+    description = "Display your faction's power",
+    on_success = function(player, faction, pos, chunkpos, args)
+        minetest.chat_send_player(player, "Power: "..faction.power)
+        return true
+    end
+})
+
+factions.register_command("setbanner", {
+    description = "Sets the banner you're on as the faction's banner.",
+    faction_permissions = {"banner"},
+    on_success = function(player, faction, pos, chunkpos, args)
+        local meta = minetest.get_meta({x = pos.x, y = pos.y - 1, z = pos.z})
+        local banner = meta:get_string("banner")
+        if not banner then
+            minetest.chat_send_player(player, "No banner found.")
+            return false
+        end
+        faction:set_banner(banner)
+    end
+})
+
+factions.register_command("convert", {
+    description = "Load factions in the old format",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"string"},
+    on_success = function(player, faction, pos, chunkpos, args)
+        if factions.convert(args.strings[1]) then
+            minetest.chat_send_player(player, "Factions successfully converted.")
+        else
+            minetest.chat_send_player(player, "Error.")
         end
     end
 })

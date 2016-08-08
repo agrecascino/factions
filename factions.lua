@@ -56,7 +56,8 @@ function factions.Faction:new(faction)
     faction = {
         power = 0.,
         players = {},
-        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "edit", "ranks"},
+        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "description", "ranks", "spawn"},
+                 ["moderator"] = {"claim", "playerslist", "build", "spawn"},
                  ["member"] = {"build"}
                 },
         leader = nil,
@@ -68,7 +69,6 @@ function factions.Faction:new(faction)
         allies = {},
         enemies = {},
         join_free = false,
-        spawn = nil,
     } or faction
     setmetatable(faction, self)
     return faction
@@ -108,15 +108,24 @@ function factions.Faction.remove_player(self, player)
     factions.save()
 end
 
+function factions.Faction.can_claim_chunk(self, chunkpos)
+    if factions.chunks[chunkpos] or self.power < factions.power_per_chunk then
+        return false
+    end
+    return true
+end
+
 function factions.Faction.claim_chunk(self, chunkpos)
     factions.chunks[chunkpos] = self.name
     self.land[chunkpos] = true
+    self.decrease_power(factions.power_per_chunk)
     self:on_claim_chunk(chunkpos)
     factions.save()
 end
 function factions.Faction.unclaim_chunk(self, chunkpos)
     factions.chunks[chunkpos] = nil
     self.land[chunkpos] = nil
+    self.increase_power(factions.power_per_chunk)
     self:on_unclaim_chunk(chunkpos)
     factions.save()
 end
@@ -203,13 +212,13 @@ function factions.Faction.end_enemy(self, faction)
     factions.save()
 end
 function factions.Faction.set_spawn(self, pos)
-    self.spawn = pos
+    self.spawn = {x=pos.x, y=pos.y, z=pos.z}
     self:on_set_spawn()
     factions.save()
 end
 function factions.Faction.add_rank(self, rank, perms)
     self.ranks[rank] = perms
-    self:on_new_rank(rank)
+    self:on_add_rank(rank)
     factions.save()
 end
 function factions.Faction.delete_rank(self, rank, newrank)
@@ -393,6 +402,23 @@ minetest.register_globalstep(
 )
 minetest.register_on_joinplayer(
     function(player)
+    end
+)
+minetest.register_on_respawnplayer(
+    function(player)
+        local playername = player:get_player_name()
+        local faction = factions.players[playername]
+        if not faction then
+            return false
+        else
+            faction = factions.factions[faction]
+            if not faction.spawn then
+                return false
+            else
+                player:setpos(faction.spawn)
+                return true
+            end
+        end
     end
 )
 

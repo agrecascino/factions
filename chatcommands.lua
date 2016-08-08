@@ -408,7 +408,7 @@ factions.register_command("newrank", {
             --TODO: rank already exists
             return false
         end
-        faction:new_rank(rank, args.other)
+        faction:add_rank(rank, args.other)
         return true
     end
 })
@@ -419,7 +419,7 @@ factions.register_command("delrank", {
     faction_permissions = {"ranks"},
     on_success = function(player, faction, pos, chunkpos, args)
         local rank = args.strings[1]
-        local newrank = args.string[2]
+        local newrank = args.strings[2]
         if not faction.ranks[rank] or not faction.ranks[rank] then
             --TODO: error (one of either ranks do not exist)
             return false
@@ -458,6 +458,19 @@ factions.register_command("help", {
     infaction = false,
     on_success = function(player, faction, pos, chunkpos, args)
         factions_chat.show_help(player)
+    end
+})
+
+factions.register_command("spawn", {
+    description = "Shows your faction's spawn",
+    infaction = true,
+    on_success = function(player, faction, pos, chunkpos, args)
+        if faction.spawn then
+            minetest.chat_send_player(player, "Spawn is at ("..table.concat(faction.spawn, ", ")..")")
+            return true
+        else
+            minetest.chat_send_player(player, "Your faction has no spawn set.")
+        end
     end
 })
 

@@ -1,10 +1,10 @@
 -------------------------------------------------------------------------------
--- factionsmod Mod by Sapier
+-- factions Mod by Sapier
 --
 -- License WTFPL
 --
---! @file factionsmod.lua
---! @brief factionsmod core file containing datastorage
+--! @file factions.lua
+--! @brief factions core file containing datastorage
 --! @copyright Sapier
 --! @author Sapier
 --! @date 2013-05-08
@@ -13,47 +13,47 @@
 -------------------------------------------------------------------------------
 
 --read some basic information
-local factionsmod_worldid = minetest.get_worldpath()
+local factions_worldid = minetest.get_worldpath()
 
---! @class factionsmod
---! @brief main class for factionsmod
-factionsmod = {}
+--! @class factions
+--! @brief main class for factions
+factions = {}
 
 --! @brief runtime data
-factionsmod.factions = {}
-factionsmod.chunks = {}
-factionsmod.players = {}
+factions.factions = {}
+factions.chunks = {}
+factions.players = {}
 
-factionsmod.print = function(text)
-	print("factionsmod: " .. dump(text))
+factions.print = function(text)
+	print("factions: " .. dump(text))
 end
 
-factionsmod.dbg_lvl1 = function() end --factionsmod.print  -- errors
-factionsmod.dbg_lvl2 = function() end --factionsmod.print  -- non cyclic trace
-factionsmod.dbg_lvl3 = function() end --factionsmod.print  -- cyclic trace
+factions.dbg_lvl1 = function() end --factions.print  -- errors
+factions.dbg_lvl2 = function() end --factions.print  -- non cyclic trace
+factions.dbg_lvl3 = function() end --factions.print  -- cyclic trace
 
-factionsmod.factions = {}
+factions.factions = {}
 --- settings
-factionsmod.lower_claimable_height = -512
+factions.lower_laimable_height = -512
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
-factionsmod.can_create_faction = function(name)
-    if factionsmod.factions[name] then
+factions.can_create_faction = function(name)
+    if factions.factions[name] then
         return false
     else
         return true
-    end,
+    end
 end
 
 ---------------------
 --! @brief create a faction object
-factionsmod.new_faction = function(name)
+factions.new_faction = function(name)
     local faction = {
         name = name,
         power = 0.,
         players = {},
-        ranks = {["leader"] = {"disband", "claim", "playerlist", "build", "edit"},
+        ranks = {["leader"] = {"disband", "claim", "playerlist", "build", "edit", "ranks"},
                  ["member"] = {"build"}
                 },
         leader = nil,
@@ -64,68 +64,88 @@ factionsmod.new_faction = function(name)
         land = {},
         allies = {},
         enemies = {},
-        join_free = false
+        join_free = false,
+        spawn = nil,
 
         ----------------------
         --  methods
         increase_power = function(self, power)
             self.power = self.power + power
+            factions.save()
         end,
         decrease_power = function(self, power)
             self.power = self.power - power
+            factions.save()
         end,
         add_player = function(self, player, rank)
             self.players[player] = rank or self.default_rank
+            factions.players[player] = self.name
             self:on_player_join(player)
             self.invited_players[player] = nil
+            factions.save()
         end,
         remove_player = function(self, player)
             self.players[player] = nil
+            factions.players[player] = nil
             self:on_player_leave(player)
+            factions.save()
         end,
         claim_chunk = function(self, chunkpos)
-            factionsmod.chunks[chunkpos] = self.name
+            factions.chunks[chunkpos] = self.name
             self.land[chunkpos] = true
             self:on_claim_chunk(chunkpos)
+            factions.save()
         end,
         unclaim_chunk = function(self, chunkpos)
-            factionsmod.chunks[chunkpos] = nil
+            factions.chunks[chunkpos] = nil
             self.land[chunkpos] = nil
             self:on_unclaim_chunks(chunkpos)
+            factions.save()
         end,
         disband = function(self)
-            factionsmod.factions[self.name] = nil
             for i in ipairs(self.players) do -- remove players affiliation
-                factionsmod.players[self.players[i]] = nil
+                factions.players[self.players[i]] = nil
             end
-            for k, v in self.land do -- remove chunk claims
-                factionsmod.chunks[v] = nil
+            for k, v in pairs(self.land) do -- remove chunk claims
+                factions.chunks[v] = nil
             end
             self:on_disband()
+            factions.factions[self.name] = nil
+            factions.save()
         end,
         set_leader = function(self, player)
             self.leader = player
             self.players[player] = self.default_leader_rank
             self:on_new_leader()
+            factions.save()
         end,
         has_permission = function(self, player, permission)
             local p = self.players[player]
             if not p then
                 return false
             end
-            return table.contains(self.groups[p], permission)
+            local perms = self.ranks[p]
+            for i in ipairs(perms) do
+                if perms[i] == permission then
+                    return true
+                end
+            end
+            return false
         end,
         set_description = function(self, new)
             self.description = new
             self:on_change_description()
+            factions.save()
         end,
         invite_player = function(self, player)
             self.invited_players[player] = true
             self:on_player_invited(player)
+            factions.save()
         end,
         revoke_invite = function(self, player)
-            self.invited_player[player = nil
+            self.invited_players[player] = nil
             self:on_revoke_invite(player)
+            factions.save()
         end,
         is_invited = function(self, player)
             return table.contains(self.invited_players, player)
@@ -133,9 +153,10 @@ factionsmod.new_faction = function(name)
         toggle_join_free = function(self, bool)
             self.join_free = bool
             self:on_toggle_join_free()
+            factions.save()
         end,
         can_join = function(self, player)
-            return self.join_free or invited_players[player]
+            return self.join_free or self.invited_players[player]
         end,
         new_alliance = function(self, faction)
             self.allies[faction] = true
@@ -143,25 +164,49 @@ factionsmod.new_faction = function(name)
             if self.enemies[faction] then
                 self:end_enemy(faction)
             end
+            factions.save()
         end,
         end_alliance = function(self, faction)
             self.allies[faction] = nil
             self:on_end_alliance(faction)
+            factions.save()
         end,
         new_enemy = function(self, faction)
             self.enemies[faction] = true
-            self:on_new_enemy[faction]
+            self:on_new_enemy(faction)
             if self.allies[faction] then
                 self:end_alliance(faction)
             end
+            factions.save()
         end,
         end_enemy = function(self, faction)
             self.enemies[faction] = nil
-            self:on_end_enemy[faction]
+            self:on_end_enemy(faction)
+            factions.save()
+        end,
+        set_spawn = function(self, pos)
+            self.spawn = pos
+            self:on_set_spawn()
+            factions.save()
+        end,
+        add_rank = function(self, rank, perms)
+            self.ranks[rank] = perms
+            self:on_new_rank(rank)
+            factions.save()
+        end,
+        delete_rank = function(self, rank, newrank)
+            for player, r in pairs(self.players) do
+                if r == rank then
+                    self.players[player] = newrank
+                end
+            end
+            self.ranks[rank] = nil
+            self:on_delete_rank(rank, newrank)
+            factions.save()
         end,
 
-        -----------------------
-        -- callbacks for events
+        --------------------------
+        -- callbacks for events --
         on_create = function(self)  --! @brief called when the faction is added to the global faction list
             --TODO: implement
         end,
@@ -198,60 +243,71 @@ factionsmod.new_faction = function(name)
         on_end_alliance = function(self, faction)
             --TODO: implement
         end,
+        on_set_spawn = function(self)
+            --TODO: implement
+        end,
+        on_add_rank = function(self, rank)
+            --TODO: implement
+        end,
+        on_delete_rank = function(self, rank, newrank)
+            --TODO: implement
+        end,
     }
-    factionsmod[name] = faction
+    factions.factions[name] = faction
+    factions.save()
     return faction
 end
 
 --??????????????
-function factionsmod.fix_powercap(name)
-	factionsmod.data.factionsmod[name].powercap = #factionsmod.dynamic_data.membertable[name] + 10
+function factions.fix_powercap(name)
+	factions.data.factions[name].powercap = #factions.dynamic_data.membertable[name] + 10
 end
 --??????????????
 
-function factionsmod.get_chunk(pos)
-    return factionsmod.chunks[factionsmod.get_chunkpos(pos)]
+function factions.get_chunk(pos)
+    return factions.chunks[factions.get_chunkpos(pos)]
 end
 
-function factionsmod.get_chunkpos(pos)
-    return {math.floor(pos.x / 16.), math.floor(pos.z / 16.)}
+function factions.get_chunk_pos(pos)
+    return math.floor(pos.x / 16.)..","..math.floor(pos.z / 16.)
+end
 
 
 -------------------------------------------------------------------------------
 -- name: add_faction(name)
 --
 --! @brief add a faction
---! @memberof factionsmod
+--! @memberof factions
 --! @public
 --
 --! @param name of faction to add
 --!
 --! @return faction object/false (succesfully added faction or not)
 -------------------------------------------------------------------------------
-function factionsmod.add_faction(name)
-        if factionsmod.can_create_faction(name) then
-            local fac = factionsmod.new_faction(name)
-            fac:on_create()
-            return fac
-        else
-            return nil
-        end,
+function factions.add_faction(name)
+    if factions.can_create_faction(name) then
+        local fac = factions.new_faction(name)
+        fac:on_create()
+        return fac
+    else
+        return nil
+    end
 end
 
 -------------------------------------------------------------------------------
 -- name: get_faction_list()
 --
---! @brief get list of factionsmod
---! @memberof factionsmod
+--! @brief get list of factions
+--! @memberof factions
 --! @public
 --!
---! @return list of factionsmod
+--! @return list of factions
 -------------------------------------------------------------------------------
-function factionsmod.get_faction_list()
+function factions.get_faction_list()
 
 	local retval = {}
 	
-	for key,value in pairs(factionsmod.factions) do
+	for key,value in pairs(factions.factions) do
 		table.insert(retval,key)
 	end
 	
@@ -262,23 +318,23 @@ end
 -- name: save()
 --
 --! @brief save data to file
---! @memberof factionsmod
+--! @memberof factions
 --! @private
 -------------------------------------------------------------------------------
-function factionsmod.save()
+function factions.save()
 
 	--saving is done much more often than reading data to avoid delay
 	--due to figuring out which data to save and which is temporary only
 	--all data is saved here
 	--this implies data needs to be cleant up on load
 	
-	local file,error = io.open(factionsmod_worldid .. "/" .. "factionsmod.conf","w")
+	local file,error = io.open(factions_worldid .. "/" .. "factions.conf","w")
 	
 	if file ~= nil then
-		file:write(minetest.serialize(factionsmod.factions))
+		file:write(minetest.serialize(factions.factions))
 		file:close()
 	else
-		minetest.log("error","MOD factionsmod: unable to save factionsmod world specific data!: " .. error)
+		minetest.log("error","MOD factions: unable to save factions world specific data!: " .. error)
 	end
 	
 end
@@ -287,30 +343,31 @@ end
 -- name: load()
 --
 --! @brief load data from file
---! @memberof factionsmod
+--! @memberof factions
 --! @private
 --
 --! @return true/false
 -------------------------------------------------------------------------------
-function factionsmod.load()
-	local file,error = io.open(factionsmod_worldid .. "/" .. "factionsmod.conf","r")
+function factions.load()
+	local file,error = io.open(factions_worldid .. "/" .. "factions.conf","r")
 	
 	if file ~= nil then
 		local raw_data = file:read("*a")
-		factionsmod.factions = minetest.deserialize(raw_data)
-        for facname, faction in pairs(factionsmod.factions) do
-            for i in ipairs(faction.players) do
-                factionsmod.players[faction.players[i]] = facname
+		factions.factions = minetest.deserialize(raw_data)
+        for facname, faction in pairs(factions.factions) do
+            minetest.log("action", facname..","..faction.name)
+            for player, rank in pairs(faction.players) do
+                minetest.log("action", player..","..rank)
+                factions.players[player] = facname
             end
             for chunkpos, val in pairs(faction.land) do
-                factionsmod.chunks[chunkpos] = val
+                factions.chunks[chunkpos] = facname
             end
         end
 		file:close()
     end
 end
 			
---autojoin players to faction players
 minetest.register_on_dieplayer(
     function(player)
     end
@@ -324,4 +381,17 @@ minetest.register_on_joinplayer(
     function(player)
     end
 )
+
+
+local default_is_protected = minetest.is_protected
+minetest.is_protected = function(pos, player)
+    local chunkpos = factions.get_chunk_pos(pos)
+    local faction = factions.chunks[chunkpos]
+    if not faction then
+        return default_is_protected(pos, player)
+    else
+        faction = factions.factions[faction]
+        return not faction:has_permission(player, "build")
+    end
+end
 

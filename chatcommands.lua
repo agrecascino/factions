@@ -161,10 +161,13 @@ factions.register_command ("claim", {
     description = "Claim the plot of land you're on.",
     on_success = function(player, faction, pos, chunkpos, args)
         local chunk = factions.chunks[chunkpos]
-        if not chunk  and faction:can_claim_chunk(chunkpos) then
+        if not chunk and faction:can_claim_chunk(chunkpos) then
             minetest.chat_send_player(player, "Claming chunk "..chunkpos)
             faction:claim_chunk(chunkpos)
             return true
+        elseif not faction:can_claim_chunk(chunkpos) then
+            send_error(player, "Chunk cannot be claimed.")
+            return false
         else
             if chunk == faction.name then
                 send_error(player, "This chunk already belongs to your faction.")
@@ -519,6 +522,22 @@ factions.register_command("convert", {
         else
             minetest.chat_send_player(player, "Error.")
         end
+        return true
+    end
+})
+
+factions.register_command("free", {
+    description = "Forcefully frees a chunk",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    on_success = function(player, faction, pos, chunkpos, args)
+        local fac = factions.chunks[chunkpos]
+        if not fac then
+            send_error(player, "No claim at this position")
+            return false
+        end
+        faction:unclaim_chunk(chunkpos)
+        return true
     end
 })
 

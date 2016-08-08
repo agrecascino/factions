@@ -24,17 +24,11 @@ factions.factions = {}
 factions.chunks = {}
 factions.players = {}
 
-factions.print = function(text)
-	print("factions: " .. dump(text))
-end
-
-factions.dbg_lvl1 = function() end --factions.print  -- errors
-factions.dbg_lvl2 = function() end --factions.print  -- non cyclic trace
-factions.dbg_lvl3 = function() end --factions.print  -- cyclic trace
 
 factions.factions = {}
 --- settings
 factions.lower_laimable_height = -512
+factions.power_per_chunk = 0.
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
@@ -46,14 +40,18 @@ factions.can_create_faction = function(name)
     end
 end
 
----------------------
---! @brief create a faction object
-factions.new_faction = function(name)
-    local faction = {
-        name = name,
+
+factions.Faction = {
+}
+
+factions.Faction.__index = factions.Faction
+
+function factions.Faction:new(faction) 
+    faction = {
         power = 0.,
         players = {},
-        ranks = {["leader"] = {"disband", "claim", "playerlist", "build", "edit", "ranks"},
+        ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "description", "ranks", "spawn"},
+                 ["moderator"] = {"claim", "playerslist", "build", "spawn"},
                  ["member"] = {"build"}
                 },
         leader = nil,
@@ -65,197 +63,215 @@ factions.new_faction = function(name)
         allies = {},
         enemies = {},
         join_free = false,
-        spawn = nil,
+    } or faction
+    setmetatable(faction, self)
+    return faction
+end
 
-        ----------------------
-        --  methods
-        increase_power = function(self, power)
-            self.power = self.power + power
-            factions.save()
-        end,
-        decrease_power = function(self, power)
-            self.power = self.power - power
-            factions.save()
-        end,
-        add_player = function(self, player, rank)
-            self.players[player] = rank or self.default_rank
-            factions.players[player] = self.name
-            self:on_player_join(player)
-            self.invited_players[player] = nil
-            factions.save()
-        end,
-        remove_player = function(self, player)
-            self.players[player] = nil
-            factions.players[player] = nil
-            self:on_player_leave(player)
-            factions.save()
-        end,
-        claim_chunk = function(self, chunkpos)
-            factions.chunks[chunkpos] = self.name
-            self.land[chunkpos] = true
-            self:on_claim_chunk(chunkpos)
-            factions.save()
-        end,
-        unclaim_chunk = function(self, chunkpos)
-            factions.chunks[chunkpos] = nil
-            self.land[chunkpos] = nil
-            self:on_unclaim_chunks(chunkpos)
-            factions.save()
-        end,
-        disband = function(self)
-            for i in ipairs(self.players) do -- remove players affiliation
-                factions.players[self.players[i]] = nil
-            end
-            for k, v in pairs(self.land) do -- remove chunk claims
-                factions.chunks[v] = nil
-            end
-            self:on_disband()
-            factions.factions[self.name] = nil
-            factions.save()
-        end,
-        set_leader = function(self, player)
-            self.leader = player
-            self.players[player] = self.default_leader_rank
-            self:on_new_leader()
-            factions.save()
-        end,
-        has_permission = function(self, player, permission)
-            local p = self.players[player]
-            if not p then
-                return false
-            end
-            local perms = self.ranks[p]
-            for i in ipairs(perms) do
-                if perms[i] == permission then
-                    return true
-                end
-            end
-            return false
-        end,
-        set_description = function(self, new)
-            self.description = new
-            self:on_change_description()
-            factions.save()
-        end,
-        invite_player = function(self, player)
-            self.invited_players[player] = true
-            self:on_player_invited(player)
-            factions.save()
-        end,
-        revoke_invite = function(self, player)
-            self.invited_players[player] = nil
-            self:on_revoke_invite(player)
-            factions.save()
-        end,
-        is_invited = function(self, player)
-            return table.contains(self.invited_players, player)
-        end,
-        toggle_join_free = function(self, bool)
-            self.join_free = bool
-            self:on_toggle_join_free()
-            factions.save()
-        end,
-        can_join = function(self, player)
-            return self.join_free or self.invited_players[player]
-        end,
-        new_alliance = function(self, faction)
-            self.allies[faction] = true
-            self:on_new_alliance(faction)
-            if self.enemies[faction] then
-                self:end_enemy(faction)
-            end
-            factions.save()
-        end,
-        end_alliance = function(self, faction)
-            self.allies[faction] = nil
-            self:on_end_alliance(faction)
-            factions.save()
-        end,
-        new_enemy = function(self, faction)
-            self.enemies[faction] = true
-            self:on_new_enemy(faction)
-            if self.allies[faction] then
-                self:end_alliance(faction)
-            end
-            factions.save()
-        end,
-        end_enemy = function(self, faction)
-            self.enemies[faction] = nil
-            self:on_end_enemy(faction)
-            factions.save()
-        end,
-        set_spawn = function(self, pos)
-            self.spawn = pos
-            self:on_set_spawn()
-            factions.save()
-        end,
-        add_rank = function(self, rank, perms)
-            self.ranks[rank] = perms
-            self:on_new_rank(rank)
-            factions.save()
-        end,
-        delete_rank = function(self, rank, newrank)
-            for player, r in pairs(self.players) do
-                if r == rank then
-                    self.players[player] = newrank
-                end
-            end
-            self.ranks[rank] = nil
-            self:on_delete_rank(rank, newrank)
-            factions.save()
-        end,
 
-        --------------------------
-        -- callbacks for events --
-        on_create = function(self)  --! @brief called when the faction is added to the global faction list
-            --TODO: implement
-        end,
-        on_player_leave = function(self, player)
-            --TODO: implement
-        end,
-        on_player_join = function(self, player)
-            --TODO: implement
-        end,
-        on_claim_chunk = function(self, pos)
-            --TODO: implement
-        end,
-        on_unclaim_chunk = function(self, pos)
-            --TODO: implement
-        end,
-        on_disband = function(self, pos)
-            --TODO: implement
-        end,
-        on_new_leader = function(self)
-            --TODO: implement
-        end,
-        on_change_description = function(self)
-            --TODO: implement
-        end,
-        on_player_invited = function(self, player)
-            --TODO: implement
-        end,
-        on_toggle_join_free = function(self, player)
-            --TODO: implement
-        end,
-        on_new_alliance = function(self, faction)
-            --TODO: implement
-        end,
-        on_end_alliance = function(self, faction)
-            --TODO: implement
-        end,
-        on_set_spawn = function(self)
-            --TODO: implement
-        end,
-        on_add_rank = function(self, rank)
-            --TODO: implement
-        end,
-        on_delete_rank = function(self, rank, newrank)
-            --TODO: implement
-        end,
-    }
+factions.new_faction = function(name)
+    local faction =  factions.Faction:new(nil)
+    faction.name = name
     factions.factions[name] = faction
     factions.save()
     return faction
+end
+
+function factions.Faction.increase_power(self, power)
+    self.power = self.power + power
+    factions.save()
+end
+
+function factions.Faction.decrease_power(self, power)
+    self.power = self.power - power
+    factions.save()
+end
+
+function factions.Faction.add_player(self, player, rank)
+    self.players[player] = rank or self.default_rank
+    factions.players[player] = self.name
+    self:on_player_join(player)
+    self.invited_players[player] = nil
+    factions.save()
+end
+
+function factions.Faction.remove_player(self, player)
+    self.players[player] = nil
+    factions.players[player] = nil
+    self:on_player_leave(player)
+    factions.save()
+end
+
+function factions.Faction.can_claim_chunk(self, chunkpos)
+    if factions.chunks[chunkpos] or self.power < factions.power_per_chunk then
+        return false
+    end
+    return true
+end
+
+function factions.Faction.claim_chunk(self, chunkpos)
+    factions.chunks[chunkpos] = self.name
+    self.land[chunkpos] = true
+    self:decrease_power(factions.power_per_chunk)
+    self:on_claim_chunk(chunkpos)
+    factions.save()
+end
+function factions.Faction.unclaim_chunk(self, chunkpos)
+    factions.chunks[chunkpos] = nil
+    self.land[chunkpos] = nil
+    self:increase_power(factions.power_per_chunk)
+    self:on_unclaim_chunk(chunkpos)
+    factions.save()
+end
+function factions.Faction.disband(self)
+    for k, _ in pairs(self.players) do -- remove players affiliation
+        factions.players[k] = nil
+    end
+    for k, v in pairs(self.land) do -- remove chunk claims
+        factions.chunks[k] = nil
+    end
+    self:on_disband()
+    factions.factions[self.name] = nil
+    factions.save()
+end
+function factions.Faction.set_leader(self, player)
+    self.leader = player
+    self.players[player] = self.default_leader_rank
+    self:on_new_leader()
+    factions.save()
+end
+function factions.Faction.has_permission(self, player, permission)
+    local p = self.players[player]
+    if not p then
+        return false
+    end
+    local perms = self.ranks[p]
+    for i in ipairs(perms) do
+        if perms[i] == permission then
+            return true
+        end
+    end
+    return false
+end
+function factions.Faction.set_description(self, new)
+    self.description = new
+    self:on_change_description()
+    factions.save()
+end
+function factions.Faction.invite_player(self, player)
+    self.invited_players[player] = true
+    self:on_player_invited(player)
+    factions.save()
+end
+function factions.Faction.revoke_invite(self, player)
+    self.invited_players[player] = nil
+    self:on_revoke_invite(player)
+    factions.save()
+end
+function factions.Faction.is_invited(self, player)
+    return table.contains(self.invited_players, player)
+end
+function factions.Faction.toggle_join_free(self, bool)
+    self.join_free = bool
+    self:on_toggle_join_free()
+    factions.save()
+end
+function factions.Faction.can_join(self, player)
+    return self.join_free or self.invited_players[player]
+end
+function factions.Faction.new_alliance(self, faction)
+    self.allies[faction] = true
+    self:on_new_alliance(faction)
+    if self.enemies[faction] then
+        self:end_enemy(faction)
+    end
+    factions.save()
+end
+function factions.Faction.end_alliance(self, faction)
+    self.allies[faction] = nil
+    self:on_end_alliance(faction)
+    factions.save()
+end
+function factions.Faction.new_enemy(self, faction)
+    self.enemies[faction] = true
+    self:on_new_enemy(faction)
+    if self.allies[faction] then
+        self:end_alliance(faction)
+    end
+    factions.save()
+end
+function factions.Faction.end_enemy(self, faction)
+    self.enemies[faction] = nil
+    self:on_end_enemy(faction)
+    factions.save()
+end
+function factions.Faction.set_spawn(self, pos)
+    self.spawn = {x=pos.x, y=pos.y, z=pos.z}
+    self:on_set_spawn()
+    factions.save()
+end
+function factions.Faction.add_rank(self, rank, perms)
+    self.ranks[rank] = perms
+    self:on_add_rank(rank)
+    factions.save()
+end
+function factions.Faction.delete_rank(self, rank, newrank)
+    for player, r in pairs(self.players) do
+        if r == rank then
+            self.players[player] = newrank
+        end
+    end
+    self.ranks[rank] = nil
+    self:on_delete_rank(rank, newrank)
+    factions.save()
+end
+
+--------------------------
+-- callbacks for events --
+function factions.Faction.on_create(self)  --! @brief called when the faction is added to the global faction list
+    --TODO: implement
+end
+function factions.Faction.on_player_leave(self, player)
+    --TODO: implement
+end
+function factions.Faction.on_player_join(self, player)
+    --TODO: implement
+end
+function factions.Faction.on_claim_chunk(self, pos)
+    --TODO: implement
+end
+function factions.Faction.on_unclaim_chunk(self, pos)
+    --TODO: implement
+end
+function factions.Faction.on_disband(self, pos)
+    --TODO: implement
+end
+function factions.Faction.on_new_leader(self)
+    --TODO: implement
+end
+function factions.Faction.on_change_description(self)
+    --TODO: implement
+end
+function factions.Faction.on_player_invited(self, player)
+    --TODO: implement
+end
+function factions.Faction.on_toggle_join_free(self, player)
+    --TODO: implement
+end
+function factions.Faction.on_new_alliance(self, faction)
+    --TODO: implement
+end
+function factions.Faction.on_end_alliance(self, faction)
+    --TODO: implement
+end
+function factions.Faction.on_set_spawn(self)
+    --TODO: implement
+end
+function factions.Faction.on_add_rank(self, rank)
+    --TODO: implement
+end
+function factions.Faction.on_delete_rank(self, rank, newrank)
+    --TODO: implement
 end
 
 --??????????????
@@ -363,6 +379,7 @@ function factions.load()
             for chunkpos, val in pairs(faction.land) do
                 factions.chunks[chunkpos] = facname
             end
+            setmetatable(faction, factions.Faction)
         end
 		file:close()
     end
@@ -373,12 +390,50 @@ minetest.register_on_dieplayer(
     end
 )
 
+local lastUpdate = 0.
+
 minetest.register_globalstep(
     function(dtime)
+        lastUpdate = lastUpdate + dtime
+        if lastUpdate > .5 then
+            local playerslist = minetest.get_connected_players()
+            for i in pairs(playerslist) do
+                local player = playerslist[i]
+                local chunkpos = factions.get_chunk_pos(player:getpos())
+                local faction = factions.chunks[chunkpos]
+                player:hud_remove("factionLand")
+                player:hud_add({
+                    hud_elem_type = "text",
+                    name = "factionLand",
+                    number = 0xFFFFFF,
+                    position = {x=0.1, y = .98},
+                    text = faction or "Wilderness",
+                    scale = {x=1, y=1},
+                    alignment = {x=0, y=0},
+                })
+            end
+        end
     end
 )
 minetest.register_on_joinplayer(
     function(player)
+    end
+)
+minetest.register_on_respawnplayer(
+    function(player)
+        local playername = player:get_player_name()
+        local faction = factions.players[playername]
+        if not faction then
+            return false
+        else
+            faction = factions.factions[faction]
+            if not faction.spawn then
+                return false
+            else
+                player:setpos(faction.spawn)
+                return true
+            end
+        end
     end
 )
 

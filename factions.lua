@@ -45,9 +45,6 @@ factions.Faction = {
 }
 
 util = {
-    coords2D_string = function(coords)
-        return coords.x..", "..coords.y
-    end
     coords3D_string = function(coords)
         return coords.x..", "..coords.y..", "..coords.z
     end
@@ -258,11 +255,11 @@ function factions.Faction.promote(self, member, rank)
     self:on_promote(member)
 end
 function factions.Faction.broadcast(self, msg, sender)
-    local message = "self.name> "..msg
+    local message = self.name.."> "..msg
     if sender then
         message = sender.."@"..message
     end
-    message = "<"..message
+    message = "Faction<"..message
     for k, _ in pairs(self.players) do
         minetest.chat_send_player(k, message)
     end
@@ -280,10 +277,10 @@ function factions.Faction.on_player_join(self, player)
     self:broadcast(player.." has joined this faction.")
 end
 function factions.Faction.on_claim_chunk(self, pos)
-    self:broadcast("Chunk ("..util.coords2D_string(pos)..") has been claimed.")
+    self:broadcast("Chunk ("..pos..") has been claimed.")
 end
 function factions.Faction.on_unclaim_chunk(self, pos)
-    self:broadcast("Chunk ("..util.coords2D_string(pos)..") has been unclaimed.")
+    self:broadcast("Chunk ("..pos..") has been unclaimed.")
 end
 function factions.Faction.on_disband(self, pos)
     minetest.chat_send_all("Faction "..self.name.."has been disbanded.")
@@ -307,7 +304,7 @@ function factions.Faction.on_end_alliance(self, faction)
     self:broadcast("This faction is no longer allied with "..faction.."!")
 end
 function factions.Faction.on_set_spawn(self)
-    self:broadcast("The faction spawn has been set to ("..util.coords2D_string(pos)..").")
+    self:broadcast("The faction spawn has been set to ("..util.coords3D_string(pos)..").")
 end
 function factions.Faction.on_add_rank(self, rank)
     self:broadcast("The rank "..rank.." has been created with privileges: "..table.concat(self.rank[rank]))

@@ -160,16 +160,17 @@ factions.register_command ("claim", {
     faction_permissions = {"claim"},
     description = "Claim the plot of land you're on.",
     on_success = function(player, faction, pos, chunkpos, args)
-        local chunk = factions.chunks[chunkpos]
-        if not chunk and faction:can_claim_chunk(chunkpos) then
+        local can_claim = faction:can_claim_chunk(chunkpos)
+        if can_claim then
             minetest.chat_send_player(player, "Claming chunk "..chunkpos)
             faction:claim_chunk(chunkpos)
             return true
-        elseif not faction:can_claim_chunk(chunkpos) then
-            send_error(player, "Chunk cannot be claimed.")
-            return false
         else
-            if chunk == faction.name then
+            local chunk = factions.chunks[chunkpos]
+            if not chunk then
+                send_error(player, "You faction cannot claim any (more) chunk(s).")
+                return false
+            elseif chunk == faction.name then
                 send_error(player, "This chunk already belongs to your faction.")
                 return false
             else

@@ -105,13 +105,26 @@ function factions.Faction.remove_player(self, player)
 end
 
 function factions.Faction.can_claim_chunk(self, chunkpos)
-    if factions.chunks[chunkpos] or self.power < factions.power_per_chunk then
+    local fac = factions.chunks[chunkpos]
+    if fac then
+        if factions.factions[fac].power < 0. and self.power >= factions.power_per_chunk then
+            return true
+        else
+            return false
+        end
+    elseif self.power < factions.power_per_chunk then
         return false
     end
     return true
 end
 
 function factions.Faction.claim_chunk(self, chunkpos)
+    -- check if claiming over other faction's territory
+    local otherfac = factions.chunks[chunkpos]
+    if otherfac then
+        local faction = factions.factions[otherfac]
+        faction:unclaim_chunk(chunkpos)
+    end
     factions.chunks[chunkpos] = self.name
     self.land[chunkpos] = true
     self:decrease_power(factions.power_per_chunk)

@@ -228,7 +228,7 @@ function factions.Faction.end_enemy(self, faction)
 end
 function factions.Faction.set_spawn(self, pos)
     self.spawn = {x=pos.x, y=pos.y, z=pos.z}
-    self:on_set_spawn()
+    self:on_set_spawn(pos)
     factions.save()
 end
 function factions.Faction.add_rank(self, rank, perms)

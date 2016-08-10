@@ -307,7 +307,7 @@ function factions.Faction.on_set_spawn(self)
     self:broadcast("The faction spawn has been set to ("..util.coords3D_string(pos)..").")
 end
 function factions.Faction.on_add_rank(self, rank)
-    self:broadcast("The rank "..rank.." has been created with privileges: "..table.concat(self.ranks[rank]))
+    self:broadcast("The rank "..rank.." has been created with privileges: "..table.concat(self.ranks[rank], ", "))
 end
 function factions.Faction.on_delete_rank(self, rank, newrank)
     self:broadcast("The rank "..rank.." has been deleted and replaced by "..newrank)

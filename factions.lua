@@ -96,9 +96,9 @@ function factions.Faction.decrease_power(self, power)
 end
 
 function factions.Faction.add_player(self, player, rank)
+    self:on_player_join(player)
     self.players[player] = rank or self.default_rank
     factions.players[player] = self.name
-    self:on_player_join(player)
     self.invited_players[player] = nil
     factions.save()
 end
@@ -228,7 +228,7 @@ function factions.Faction.end_enemy(self, faction)
 end
 function factions.Faction.set_spawn(self, pos)
     self.spawn = {x=pos.x, y=pos.y, z=pos.z}
-    self:on_set_spawn()
+    self:on_set_spawn(pos)
     factions.save()
 end
 function factions.Faction.add_rank(self, rank, perms)
@@ -268,7 +268,7 @@ end
 --------------------------
 -- callbacks for events --
 function factions.Faction.on_create(self)  --! @brief called when the faction is added to the global faction list
-    minetest.chat_send_all("Faction "..self.name" has been created.")
+    minetest.chat_send_all("Faction "..self.name.." has been created.")
 end
 function factions.Faction.on_player_leave(self, player)
     self:broadcast(player.." has left this faction.")
@@ -283,7 +283,7 @@ function factions.Faction.on_unclaim_chunk(self, pos)
     self:broadcast("Chunk ("..pos..") has been unclaimed.")
 end
 function factions.Faction.on_disband(self, pos)
-    minetest.chat_send_all("Faction "..self.name.."has been disbanded.")
+    minetest.chat_send_all("Faction "..self.name.." has been disbanded.")
 end
 function factions.Faction.on_new_leader(self)
     self:broadcast(self.leader.." is now the leader of this faction.")
@@ -307,7 +307,7 @@ function factions.Faction.on_set_spawn(self)
     self:broadcast("The faction spawn has been set to ("..util.coords3D_string(pos)..").")
 end
 function factions.Faction.on_add_rank(self, rank)
-    self:broadcast("The rank "..rank.." has been created with privileges: "..table.concat(self.rank[rank]))
+    self:broadcast("The rank "..rank.." has been created with privileges: "..table.concat(self.ranks[rank], ", "))
 end
 function factions.Faction.on_delete_rank(self, rank, newrank)
     self:broadcast("The rank "..rank.." has been deleted and replaced by "..newrank)

@@ -96,9 +96,9 @@ function factions.Faction.decrease_power(self, power)
 end
 
 function factions.Faction.add_player(self, player, rank)
+    self:on_player_join(player)
     self.players[player] = rank or self.default_rank
     factions.players[player] = self.name
-    self:on_player_join(player)
     self.invited_players[player] = nil
     factions.save()
 end
@@ -268,7 +268,7 @@ end
 --------------------------
 -- callbacks for events --
 function factions.Faction.on_create(self)  --! @brief called when the faction is added to the global faction list
-    minetest.chat_send_all("Faction "..self.name" has been created.")
+    minetest.chat_send_all("Faction "..self.name.." has been created.")
 end
 function factions.Faction.on_player_leave(self, player)
     self:broadcast(player.." has left this faction.")
@@ -283,7 +283,7 @@ function factions.Faction.on_unclaim_chunk(self, pos)
     self:broadcast("Chunk ("..pos..") has been unclaimed.")
 end
 function factions.Faction.on_disband(self, pos)
-    minetest.chat_send_all("Faction "..self.name.."has been disbanded.")
+    minetest.chat_send_all("Faction "..self.name.." has been disbanded.")
 end
 function factions.Faction.on_new_leader(self)
     self:broadcast(self.leader.." is now the leader of this faction.")

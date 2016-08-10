@@ -447,7 +447,7 @@ factions.register_command("where", {
     infaction = false,
     on_success = function(player, faction, pos, chunkpos, args)
         local chunk = factions.chunks[chunkpos]
-        minetest.chat_send_player(player, "You are standing on chunk "..chunkpos..", part of "..chunk or "Wilderness"..",")
+        minetest.chat_send_player(player, "You are standing on chunk "..chunkpos..", part of "..(chunk or "Wilderness"))
         return true
     end
 })

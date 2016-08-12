@@ -4,10 +4,10 @@
 -- License WTFPL
 --
 --! @file factions.lua
---! @brief factions core file containing datastorage
---! @copyright Sapier
---! @author Sapier
---! @date 2013-05-08
+--! @brief factions core file
+--! @copyright Sapier, agrecascino, shamoanjac
+--! @author Sapier, agrecascino, shamoanjac
+--! @date 2016-08-12
 --
 -- Contact sapier a t gmx net
 -------------------------------------------------------------------------------
@@ -32,6 +32,7 @@ factions.power_per_chunk = .5
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
+--! @param name String containing the faction's name
 factions.can_create_faction = function(name)
     if factions.factions[name] then
         return false
@@ -52,24 +53,53 @@ util = {
 
 factions.Faction.__index = factions.Faction
 
+
+-- Faction permissions:
+--
+-- disband: disband the faction
+-- claim: (un)claim chunks
+-- playerslist: invite/kick players and open/close the faction
+-- build: dig and place nodes
+-- description: set the faction's description
+-- ranks: create and delete ranks
+-- spawn: set the faction's spawn
+-- banner: set the faction's banner
+-- promote: set a player's rank
+
 function factions.Faction:new(faction) 
     faction = {
+        --! @brief power of a faction (needed for chunk claiming)
         power = 0.,
+        --! @brief maximum power of a faction
+        maxpower = 0.,
+        --! @brief list of player names
         players = {},
+        --! @brief table of ranks/permissions
         ranks = {["leader"] = {"disband", "claim", "playerslist", "build", "description", "ranks", "spawn", "banner", "promote"},
                  ["moderator"] = {"claim", "playerslist", "build", "spawn"},
                  ["member"] = {"build"}
                 },
+        --! @brief name of the leader
         leader = nil,
+        --! @brief default joining rank for new members
         default_rank = "member",
+        --! @brief default rank assigned to the leader
         default_leader_rank = "leader",
+        --! @brief faction's description string
         description = "Default faction description.",
+        --! @brief list of players currently invited (can join with /f join)
         invited_players = {},
+        --! @brief table of claimed chunks (keys are chunkpos strings)
         land = {},
+        --! @brief table of allies
         allies = {},
+        --! @brief table of enemies
         enemies = {},
+        --! @brief table of chunks/factions that are under attack
         attacked_chunks = {},
+        --! @brief whether faction is closed or open (boolean)
         join_free = false,
+        --! @brief banner texture string
         banner = "bg_white.png",
     } or faction
     setmetatable(faction, self)
@@ -77,6 +107,7 @@ function factions.Faction:new(faction)
 end
 
 
+--! @brief create a new empty faction
 factions.new_faction = function(name)
     local faction =  factions.Faction:new(nil)
     faction.name = name
@@ -110,6 +141,8 @@ function factions.Faction.remove_player(self, player)
     factions.save()
 end
 
+--! @param chunkpos position of the wanted chunk
+--! @return whether this faction can claim a chunkpos
 function factions.Faction.can_claim_chunk(self, chunkpos)
     local fac = factions.chunks[chunkpos]
     if fac then
@@ -124,6 +157,7 @@ function factions.Faction.can_claim_chunk(self, chunkpos)
     return true
 end
 
+--! @brief claim a chunk, update power and update global chunks table
 function factions.Faction.claim_chunk(self, chunkpos)
     -- check if claiming over other faction's territory
     local otherfac = factions.chunks[chunkpos]
@@ -137,6 +171,7 @@ function factions.Faction.claim_chunk(self, chunkpos)
     self:on_claim_chunk(chunkpos)
     factions.save()
 end
+--! @brief claim a chunk, update power and update global chunks table
 function factions.Faction.unclaim_chunk(self, chunkpos)
     factions.chunks[chunkpos] = nil
     self.land[chunkpos] = nil
@@ -144,6 +179,8 @@ function factions.Faction.unclaim_chunk(self, chunkpos)
     self:on_unclaim_chunk(chunkpos)
     factions.save()
 end
+
+--! @brief disband faction, updates global players and chunks table
 function factions.Faction.disband(self)
     for k, _ in pairs(self.players) do -- remove players affiliation
         factions.players[k] = nil
@@ -155,12 +192,17 @@ function factions.Faction.disband(self)
     factions.factions[self.name] = nil
     factions.save()
 end
+
+--! @brief change the faction leader
 function factions.Faction.set_leader(self, player)
     self.leader = player
     self.players[player] = self.default_leader_rank
     self:on_new_leader()
     factions.save()
 end
+
+--! @brief check permissions for a given player
+--! @return boolean indicating permissions. Players not in faction always receive false
 function factions.Faction.has_permission(self, player, permission)
     local p = self.players[player]
     if not p then
@@ -179,27 +221,32 @@ function factions.Faction.set_description(self, new)
     self:on_change_description()
     factions.save()
 end
+
+--! @brief places player in invite list
 function factions.Faction.invite_player(self, player)
     self.invited_players[player] = true
     self:on_player_invited(player)
     factions.save()
 end
+
+--! @brief removes player from invite list (can no longer join via /f join)
 function factions.Faction.revoke_invite(self, player)
     self.invited_players[player] = nil
     self:on_revoke_invite(player)
     factions.save()
 end
-function factions.Faction.is_invited(self, player)
-    return table.contains(self.invited_players, player)
-end
+--! @brief set faction openness
 function factions.Faction.toggle_join_free(self, bool)
     self.join_free = bool
     self:on_toggle_join_free()
     factions.save()
 end
+
+--! @return true if a player can use /f join, false otherwise
 function factions.Faction.can_join(self, player)
     return self.join_free or self.invited_players[player]
 end
+
 function factions.Faction.new_alliance(self, faction)
     self.allies[faction] = true
     self:on_new_alliance(faction)
@@ -226,16 +273,26 @@ function factions.Faction.end_enemy(self, faction)
     self:on_end_enemy(faction)
     factions.save()
 end
+
+--! @brief faction's member will now spawn in a new place
 function factions.Faction.set_spawn(self, pos)
     self.spawn = {x=pos.x, y=pos.y, z=pos.z}
     self:on_set_spawn(pos)
     factions.save()
 end
+
+--! @brief create a new rank with permissions
+--! @param rank the name of the new rank
+--! @param rank a list with the permissions of the new rank
 function factions.Faction.add_rank(self, rank, perms)
     self.ranks[rank] = perms
     self:on_add_rank(rank)
     factions.save()
 end
+
+--! @brief delete a rank and replace it
+--! @param rank the name of the rank to be deleted
+--! @param newrank the rank given to players who were previously "rank"
 function factions.Faction.delete_rank(self, rank, newrank)
     for player, r in pairs(self.players) do
         if r == rank then
@@ -246,14 +303,17 @@ function factions.Faction.delete_rank(self, rank, newrank)
     self:on_delete_rank(rank, newrank)
     factions.save()
 end
+--! @param newbanner texture string of the new banner
 function factions.Faction.set_banner(self, newbanner)
     self.banner = newbanner
     self:on_new_banner()
 end
+--! @brief set a player's rank
 function factions.Faction.promote(self, member, rank)
     self.players[member] = rank
     self:on_promote(member)
 end
+--! @brief send a message to all members
 function factions.Faction.broadcast(self, msg, sender)
     local message = self.name.."> "..msg
     if sender then

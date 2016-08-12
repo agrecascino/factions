@@ -5,9 +5,9 @@
 --
 --! @file chatcommnd.lua
 --! @brief factions chat interface
---! @copyright Sapier
---! @author Sapier
---! @date 2013-05-08
+--! @copyright Sapier, agrecascino, shamoanjac
+--! @author Sapier, agrecascino, shamoanjac
+--! @date 2016-08-12
 --
 -- Contact sapier a t gmx net
 -------------------------------------------------------------------------------
@@ -240,7 +240,6 @@ factions.register_command("leave", {
     description = "Leave your faction.",
     on_success = function(player, faction, pos, chunkpos, args)
         faction:remove_player(player)
-        --TODO: message?
         return true
     end
 })
@@ -254,7 +253,6 @@ factions.register_command("kick", {
         if factions.players[victim.name] == faction.name
             and victim.name ~= faction.leader then -- can't kick da king
             faction:remove_player(player)
-            --TODO: message?
             return true
         else
             send_error(player, "Cannot kick player "..victim.name)
@@ -294,7 +292,6 @@ factions.register_command("join", {
         if new_faction:can_join(player) then
             if player_faction then -- leave old faction
                 player_faction:remove_player(player)
-                --TODO: message
             end
             new_faction:add_player(player)
         else
@@ -539,6 +536,14 @@ factions.register_command("free", {
         end
         faction:unclaim_chunk(chunkpos)
         return true
+    end
+})
+
+factionsm.register_command("chat", {
+    description = "Send a message to your faction's members"
+    on_success = function(player, faction, pos, chunkpos, args)
+        local msg = table.concat(args.other, " ")
+        faction:broadcast(msg, player)
     end
 })
 

@@ -392,6 +392,7 @@ factions.register_command("who", {
             minetest.chat_send_player(player, "There is nobody in this faction ("..faction.name..")")
             return true
         end
+        minetest.chat_send_player(player, "Players in faction "..faction.name..": ")
         for player, rank in pairs(faction.players) do
             minetest.chat_send_player(player, player.." ("..rank..")")
         end
@@ -566,7 +567,7 @@ factions_chat.cmdhandler = function (playername,parameter)
 	if parameter == nil or
 		parameter == "" then
         if player_faction then
-            minetest.chat_send_player(playername, player_faction.description)
+            minetest.chat_send_player(playername, "You are in faction "..player_faction..". Type /f help for a list of commands.")
         else
             minetest.chat_send_player(playername, "You are part of no faction")
         end

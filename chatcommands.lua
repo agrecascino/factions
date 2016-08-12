@@ -540,8 +540,8 @@ factions.register_command("free", {
     end
 })
 
-factionsm.register_command("chat", {
-    description = "Send a message to your faction's members"
+factions.register_command("chat", {
+    description = "Send a message to your faction's members",
     on_success = function(player, faction, pos, chunkpos, args)
         local msg = table.concat(args.other, " ")
         faction:broadcast(msg, player)

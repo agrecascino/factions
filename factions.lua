@@ -279,7 +279,7 @@ end
 --! @brief faction's member will now spawn in a new place
 function factions.Faction.set_spawn(self, pos)
     self.spawn = {x=pos.x, y=pos.y, z=pos.z}
-    self:on_set_spawn(pos)
+    self:on_set_spawn()
     factions.save()
 end
 
@@ -381,7 +381,7 @@ function factions.Faction.on_end_alliance(self, faction)
 end
 
 function factions.Faction.on_set_spawn(self)
-    self:broadcast("The faction spawn has been set to ("..util.coords3D_string(pos)..").")
+    self:broadcast("The faction spawn has been set to ("..util.coords3D_string(self.spawn)..").")
 end
 
 function factions.Faction.on_add_rank(self, rank)

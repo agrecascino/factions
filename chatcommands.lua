@@ -290,8 +290,8 @@ factions.register_command("join", {
     on_success = function(player, faction, pos, chunkpos, args)
         local new_faction = args.factions[1]
         if new_faction:can_join(player) then
-            if player_faction then -- leave old faction
-                player_faction:remove_player(player)
+            if faction then -- leave old faction
+                faction:remove_player(player)
             end
             new_faction:add_player(player)
         else
@@ -562,7 +562,7 @@ factions_chat.cmdhandler = function (playername,parameter)
 
 	local player = minetest.env:get_player_by_name(playername)
 	local params = parameter:split(" ")
-    local player_faction = factions.players[playersname]
+    local player_faction = factions.players[playername]
 
 	if parameter == nil or
 		parameter == "" then

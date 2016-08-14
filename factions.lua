@@ -21,14 +21,14 @@ factions = {}
 
 --! @brief runtime data
 factions.factions = {}
-factions.chunks = {}
+factions.parcels = {}
 factions.players = {}
 
 
 factions.factions = {}
 --- settings
 factions.lower_laimable_height = -512
-factions.power_per_chunk = .5
+factions.power_per_parcel = .5
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
@@ -57,7 +57,7 @@ factions.Faction.__index = factions.Faction
 -- Faction permissions:
 --
 -- disband: disband the faction
--- claim: (un)claim chunks
+-- claim: (un)claim parcels
 -- playerslist: invite/kick players and open/close the faction
 -- build: dig and place nodes
 -- description: set the faction's description
@@ -68,7 +68,7 @@ factions.Faction.__index = factions.Faction
 
 function factions.Faction:new(faction) 
     faction = {
-        --! @brief power of a faction (needed for chunk claiming)
+        --! @brief power of a faction (needed for parcel claiming)
         power = 0.,
         --! @brief maximum power of a faction
         maxpower = 0.,
@@ -89,14 +89,14 @@ function factions.Faction:new(faction)
         description = "Default faction description.",
         --! @brief list of players currently invited (can join with /f join)
         invited_players = {},
-        --! @brief table of claimed chunks (keys are chunkpos strings)
+        --! @brief table of claimed parcels (keys are parcelpos strings)
         land = {},
         --! @brief table of allies
         allies = {},
         --! @brief table of enemies
         enemies = {},
-        --! @brief table of chunks/factions that are under attack
-        attacked_chunks = {},
+        --! @brief table of parcels/factions that are under attack
+        attacked_parcels = {},
         --! @brief whether faction is closed or open (boolean)
         join_free = false,
         --! @brief banner texture string
@@ -141,53 +141,53 @@ function factions.Faction.remove_player(self, player)
     factions.save()
 end
 
---! @param chunkpos position of the wanted chunk
---! @return whether this faction can claim a chunkpos
-function factions.Faction.can_claim_chunk(self, chunkpos)
-    local fac = factions.chunks[chunkpos]
+--! @param parcelpos position of the wanted parcel
+--! @return whether this faction can claim a parcelpos
+function factions.Faction.can_claim_parcel(self, parcelpos)
+    local fac = factions.parcels[parcelpos]
     if fac then
-        if factions.factions[fac].power < 0. and self.power >= factions.power_per_chunk then
+        if factions.factions[fac].power < 0. and self.power >= factions.power_per_parcel then
             return true
         else
             return false
         end
-    elseif self.power < factions.power_per_chunk then
+    elseif self.power < factions.power_per_parcel then
         return false
     end
     return true
 end
 
---! @brief claim a chunk, update power and update global chunks table
-function factions.Faction.claim_chunk(self, chunkpos)
+--! @brief claim a parcel, update power and update global parcels table
+function factions.Faction.claim_parcel(self, parcelpos)
     -- check if claiming over other faction's territory
-    local otherfac = factions.chunks[chunkpos]
+    local otherfac = factions.parcels[parcelpos]
     if otherfac then
         local faction = factions.factions[otherfac]
-        faction:unclaim_chunk(chunkpos)
+        faction:unclaim_parcel(parcelpos)
     end
-    factions.chunks[chunkpos] = self.name
-    self.land[chunkpos] = true
-    self:decrease_power(factions.power_per_chunk)
-    self:on_claim_chunk(chunkpos)
+    factions.parcels[parcelpos] = self.name
+    self.land[parcelpos] = true
+    self:decrease_power(factions.power_per_parcel)
+    self:on_claim_parcel(parcelpos)
     factions.save()
 end
 
---! @brief claim a chunk, update power and update global chunks table
-function factions.Faction.unclaim_chunk(self, chunkpos)
-    factions.chunks[chunkpos] = nil
-    self.land[chunkpos] = nil
-    self:increase_power(factions.power_per_chunk)
-    self:on_unclaim_chunk(chunkpos)
+--! @brief claim a parcel, update power and update global parcels table
+function factions.Faction.unclaim_parcel(self, parcelpos)
+    factions.parcels[parcelpos] = nil
+    self.land[parcelpos] = nil
+    self:increase_power(factions.power_per_parcel)
+    self:on_unclaim_parcel(parcelpos)
     factions.save()
 end
 
---! @brief disband faction, updates global players and chunks table
+--! @brief disband faction, updates global players and parcels table
 function factions.Faction.disband(self)
     for k, _ in pairs(self.players) do -- remove players affiliation
         factions.players[k] = nil
     end
-    for k, v in pairs(self.land) do -- remove chunk claims
-        factions.chunks[k] = nil
+    for k, v in pairs(self.land) do -- remove parcel claims
+        factions.parcels[k] = nil
     end
     self:on_disband()
     factions.factions[self.name] = nil
@@ -343,11 +343,11 @@ function factions.Faction.on_player_join(self, player)
     self:broadcast(player.." has joined this faction.")
 end
 
-function factions.Faction.on_claim_chunk(self, pos)
+function factions.Faction.on_claim_parcel(self, pos)
     self:broadcast("Chunk ("..pos..") has been claimed.")
 end
 
-function factions.Faction.on_unclaim_chunk(self, pos)
+function factions.Faction.on_unclaim_parcel(self, pos)
     self:broadcast("Chunk ("..pos..") has been unclaimed.")
 end
 
@@ -405,7 +405,7 @@ end
 
 --??????????????
 
-function factions.get_chunk_pos(pos)
+function factions.get_parcel_pos(pos)
     return math.floor(pos.x / 16.)..","..math.floor(pos.z / 16.)
 end
 
@@ -497,8 +497,8 @@ function factions.load()
                 minetest.log("action", player..","..rank)
                 factions.players[player] = facname
             end
-            for chunkpos, val in pairs(faction.land) do
-                factions.chunks[chunkpos] = facname
+            for parcelpos, val in pairs(faction.land) do
+                factions.parcels[parcelpos] = facname
             end
             setmetatable(faction, factions.Faction)
         end
@@ -527,9 +527,9 @@ function factions.convert(filename)
         for player, _ in pairs(attrs.invitations) do
             newfac:invite_player(player)
         end
-        for i in ipairs(attrs.chunk) do
-            local chunkpos = table.concat(attrs.chunk[i],",")
-            newfac:claim_chunk(chunkpos)
+        for i in ipairs(attrs.parcel) do
+            local parcelpos = table.concat(attrs.parcel[i],",")
+            newfac:claim_parcel(parcelpos)
         end
     end
     for player, attrs in pairs(objects) do
@@ -556,8 +556,8 @@ minetest.register_globalstep(
             local playerslist = minetest.get_connected_players()
             for i in pairs(playerslist) do
                 local player = playerslist[i]
-                local chunkpos = factions.get_chunk_pos(player:getpos())
-                local faction = factions.chunks[chunkpos]
+                local parcelpos = factions.get_parcel_pos(player:getpos())
+                local faction = factions.parcels[parcelpos]
                 player:hud_remove("factionLand")
                 player:hud_add({
                     hud_elem_type = "text",
@@ -597,8 +597,8 @@ minetest.register_on_respawnplayer(
 
 local default_is_protected = minetest.is_protected
 minetest.is_protected = function(pos, player)
-    local chunkpos = factions.get_chunk_pos(pos)
-    local faction = factions.chunks[chunkpos]
+    local parcelpos = factions.get_parcel_pos(pos)
+    local faction = factions.parcels[parcelpos]
     if not faction then
         return default_is_protected(pos, player)
     else

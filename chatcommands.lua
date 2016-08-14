@@ -393,8 +393,8 @@ factions.register_command("who", {
             return true
         end
         minetest.chat_send_player(player, "Players in faction "..faction.name..": ")
-        for player, rank in pairs(faction.players) do
-            minetest.chat_send_player(player, player.." ("..rank..")")
+        for p, rank in pairs(faction.players) do
+            minetest.chat_send_player(player, p.." ("..rank..")")
         end
         return true
     end

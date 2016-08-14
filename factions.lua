@@ -27,7 +27,7 @@ factions.players = {}
 
 factions.factions = {}
 --- settings
-factions.lower_laimable_height = -512
+factions.protection_max_depth = -512
 factions.power_per_parcel = .5
 
 ---------------------
@@ -396,7 +396,7 @@ function factions.Faction.on_new_banner(self)
 end
 
 function factions.Faction.on_promote(self, member)
-    minetest.chat_send_player(player, "You have been promoted to "..self.players[member])
+    minetest.chat_send_player(member, "You have been promoted to "..self.players[member])
 end
 
 function factions.Faction.on_revoke_invite(self, player)
@@ -598,12 +598,27 @@ minetest.register_on_respawnplayer(
 local default_is_protected = minetest.is_protected
 minetest.is_protected = function(pos, player)
     local parcelpos = factions.get_parcel_pos(pos)
-    local faction = factions.parcels[parcelpos]
-    if not faction then
+    local parcel_faction = factions.parcels[parcelpos]
+    local player_faction = factions.players[player]
+    if pos.y < factions.protection_max_depth then
+        return false
+    end
+    if factions.disallow_edit_nofac and not player_faction then
+        return true
+    end
+    if not parcel_faction then
         return default_is_protected(pos, player)
     else
-        faction = factions.factions[faction]
-        return not faction:has_permission(player, "build")
+        parcel_faction = factions.factions[faction]
+        if parcel_faction.attacked_parcels[parcelpos] then -- chunk is being attacked
+            if parcel_faction.attacked_parcels[parcelpos][player_faction] then -- attacked by the player's faction
+                return false
+            else
+                return true
+            end
+        else
+            return not parcel_faction:has_permission(player, "build")
+        end
     end
 end
 

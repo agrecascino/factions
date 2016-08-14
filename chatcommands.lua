@@ -100,10 +100,10 @@ factions.register_command = function(cmd_name, cmd)
 
             -- get some more data
             local pos = minetest.get_player_by_name(player):getpos()
-            local chunkpos = factions.get_chunk_pos(pos)
-            return self.on_success(player, player_faction, pos, chunkpos, args)
+            local parcelpos = factions.get_parcel_pos(pos)
+            return self.on_success(player, player_faction, pos, parcelpos, args)
         end,
-        on_success = function(player, faction, pos, chunkpos, args)
+        on_success = function(player, faction, pos, parcelpos, args)
             minetest.chat_send_player(player, "Not implemented yet!")
         end
     }
@@ -159,22 +159,22 @@ end
 factions.register_command ("claim", {
     faction_permissions = {"claim"},
     description = "Claim the plot of land you're on.",
-    on_success = function(player, faction, pos, chunkpos, args)
-        local can_claim = faction:can_claim_chunk(chunkpos)
+    on_success = function(player, faction, pos, parcelpos, args)
+        local can_claim = faction:can_claim_parcel(parcelpos)
         if can_claim then
-            minetest.chat_send_player(player, "Claming chunk "..chunkpos)
-            faction:claim_chunk(chunkpos)
+            minetest.chat_send_player(player, "Claming parcel "..parcelpos)
+            faction:claim_parcel(parcelpos)
             return true
         else
-            local chunk = factions.chunks[chunkpos]
-            if not chunk then
-                send_error(player, "You faction cannot claim any (more) chunk(s).")
+            local parcel = factions.parcels[parcelpos]
+            if not parcel then
+                send_error(player, "You faction cannot claim any (more) parcel(s).")
                 return false
-            elseif chunk == faction.name then
-                send_error(player, "This chunk already belongs to your faction.")
+            elseif parcel == faction.name then
+                send_error(player, "This parcel already belongs to your faction.")
                 return false
             else
-                send_error(player, "This chunk belongs to another faction.")
+                send_error(player, "This parcel belongs to another faction.")
                 return false
             end
         end
@@ -184,13 +184,13 @@ factions.register_command ("claim", {
 factions.register_command("unclaim", {
     faction_permissions = {"claim"},
     description = "Unclaim the plot of land you're on.",
-    on_success = function(player, faction, pos, chunkpos, args)
-        local chunk = factions.chunks[chunkpos]
-        if chunk ~= faction.name then
-            send_error(player, "This chunk does not belong to you.")
+    on_success = function(player, faction, pos, parcelpos, args)
+        local parcel = factions.parcels[parcelpos]
+        if parcel ~= faction.name then
+            send_error(player, "This parcel does not belong to you.")
             return false
         else
-            faction:unclaim_chunk(chunkpos)
+            faction:unclaim_parcel(parcelpos)
             return true
         end
     end
@@ -200,7 +200,7 @@ factions.register_command("unclaim", {
 factions.register_command("list", {
     description = "List all registered factions.",
     infaction = false,
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         local list = factions.get_faction_list()
         local tosend = "Existing factions:"
         
@@ -219,7 +219,7 @@ factions.register_command("list", {
 --show factions mod version
 factions.register_command("version", {
     description = "Displays mod version.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         minetest.chat_send_player(player, "factions: version " .. factions_version , false)
     end
 })
@@ -228,7 +228,7 @@ factions.register_command("version", {
 factions.register_command("info", {
     format = {"faction"},
     description = "Shows a faction's description.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         minetest.chat_send_player(player,
             "factions: " .. args.factions[1].name .. ": " ..
             args.factions[1].description, false)
@@ -238,7 +238,7 @@ factions.register_command("info", {
 
 factions.register_command("leave", {
     description = "Leave your faction.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         faction:remove_player(player)
         return true
     end
@@ -248,7 +248,7 @@ factions.register_command("kick", {
     faction_permissions = {"playerslist"},
     format = {"player"},
     description = "Kick a player from your faction.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         local victim = args.players[1]
         if factions.players[victim.name] == faction.name
             and victim.name ~= faction.leader then -- can't kick da king
@@ -266,7 +266,7 @@ factions.register_command("create", {
     format = {"string"},
     infaction = false,
     description = "Create a new faction.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         if faction then
             send_error(player, "You are already in a faction.")
             return false
@@ -287,11 +287,11 @@ factions.register_command("join", {
     format = {"faction"},
     description = "Join a faction.",
     infaction = false,
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         local new_faction = args.factions[1]
         if new_faction:can_join(player) then
-            if player_faction then -- leave old faction
-                player_faction:remove_player(player)
+            if faction then -- leave old faction
+                faction:remove_player(player)
             end
             new_faction:add_player(player)
         else
@@ -305,7 +305,7 @@ factions.register_command("join", {
 factions.register_command("disband", {
     faction_permissions = {"disband"},
     description = "Disband your faction.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         faction:disband()
         return true
     end
@@ -314,7 +314,7 @@ factions.register_command("disband", {
 factions.register_command("close", {
     faction_permissions = {"playerslist"},
     description = "Make your faction invite-only.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         faction:toggle_join_free(false)
         --TODO: message
         return true
@@ -324,7 +324,7 @@ factions.register_command("close", {
 factions.register_command("open", {
     faction_permissions = {"playerslist"},
     description = "Allow any player to join your faction.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         faction:toggle_join_free(true)
         --TODO: message
         return true
@@ -334,7 +334,7 @@ factions.register_command("open", {
 factions.register_command("description", {
     faction_permissions = {"description"},
     description = "Set your faction's description",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         faction:set_description(table.concat(args.other," "))
         --TODO: message
         return true
@@ -345,7 +345,7 @@ factions.register_command("invite", {
     format = {"player"},
     faction_permissions = {"playerslist"},
     description = "Invite a player to your faction.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         faction:invite_player(args.players[1]:get_player_name())
         --TODO: message
         return true
@@ -356,7 +356,7 @@ factions.register_command("uninvite", {
     format = {"player"},
     faction_permissions = {"playerslist"},
     description = "Revoke a player's invite.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         faction:revoke_invite(args.players[1]:get_player_name())
         --TODO: message
         return true
@@ -368,7 +368,7 @@ factions.register_command("delete", {
     format = {"faction"},
     infaction = false,
     description = "Delete a faction.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         args.factions[1]:disband()
         --TODO: message
         return true
@@ -377,7 +377,7 @@ factions.register_command("delete", {
 
 factions.register_command("ranks", {
     description = "List ranks within your faction",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         for rank, permissions in pairs(faction.ranks) do
             minetest.chat_send_player(player, rank..": "..table.concat(permissions, " "))
         end
@@ -387,14 +387,14 @@ factions.register_command("ranks", {
 
 factions.register_command("who", {
     description = "List players in your faction, and their ranks.",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         if not faction.players then
             minetest.chat_send_player(player, "There is nobody in this faction ("..faction.name..")")
             return true
         end
         minetest.chat_send_player(player, "Players in faction "..faction.name..": ")
-        for player, rank in pairs(faction.players) do
-            minetest.chat_send_player(player, player.." ("..rank..")")
+        for p, rank in pairs(faction.players) do
+            minetest.chat_send_player(player, p.." ("..rank..")")
         end
         return true
     end
@@ -404,7 +404,7 @@ factions.register_command("newrank", {
     description = "Add a new rank.",
     format = {"string"},
     faction_permissions = {"ranks"},
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         local rank = args.strings[1]
         if faction.ranks[rank] then
             --TODO: rank already exists
@@ -419,7 +419,7 @@ factions.register_command("delrank", {
     description = "Replace and delete a rank.",
     format = {"string", "string"},
     faction_permissions = {"ranks"},
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         local rank = args.strings[1]
         local newrank = args.strings[2]
         if not faction.ranks[rank] or not faction.ranks[rank] then
@@ -434,18 +434,18 @@ factions.register_command("delrank", {
 factions.register_command("setspawn", {
     description = "Set the faction's spawn",
     faction_permissions = {"spawn"},
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         faction:set_spawn(pos)
         return true
     end
 })
 
 factions.register_command("where", {
-    description = "See whose chunk you stand on.",
+    description = "See whose parcel you stand on.",
     infaction = false,
-    on_success = function(player, faction, pos, chunkpos, args)
-        local chunk = factions.chunks[chunkpos]
-        minetest.chat_send_player(player, "You are standing on chunk "..chunkpos..", part of "..(chunk or "Wilderness"))
+    on_success = function(player, faction, pos, parcelpos, args)
+        local parcel = factions.parcels[parcelpos]
+        minetest.chat_send_player(player, "You are standing on parcel "..parcelpos..", part of "..(parcel or "Wilderness"))
         return true
     end
 })
@@ -453,7 +453,7 @@ factions.register_command("where", {
 factions.register_command("help", {
     description = "Shows help for commands.",
     infaction = false,
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         factions_chat.show_help(player)
         return true
     end
@@ -461,7 +461,7 @@ factions.register_command("help", {
 
 factions.register_command("spawn", {
     description = "Shows your faction's spawn",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         if faction.spawn then
             minetest.chat_send_player(player, "Spawn is at ("..table.concat(faction.spawn, ", ")..")")
             return true
@@ -476,7 +476,7 @@ factions.register_command("promote", {
     description = "Promotes a player to a rank",
     format = {"player", "string"},
     faction_permissions = {"promote"},
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         local rank = args.strings[1]
         if faction.ranks[rank] then
             faction:promote(args.players[1], rank)
@@ -490,7 +490,7 @@ factions.register_command("promote", {
 
 factions.register_command("power", {
     description = "Display your faction's power",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         minetest.chat_send_player(player, "Power: "..faction.power)
         return true
     end
@@ -499,7 +499,7 @@ factions.register_command("power", {
 factions.register_command("setbanner", {
     description = "Sets the banner you're on as the faction's banner.",
     faction_permissions = {"banner"},
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         local meta = minetest.get_meta({x = pos.x, y = pos.y - 1, z = pos.z})
         local banner = meta:get_string("banner")
         if not banner then
@@ -515,7 +515,7 @@ factions.register_command("convert", {
     infaction = false,
     global_privileges = {"faction_admin"},
     format = {"string"},
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         if factions.convert(args.strings[1]) then
             minetest.chat_send_player(player, "Factions successfully converted.")
         else
@@ -526,23 +526,23 @@ factions.register_command("convert", {
 })
 
 factions.register_command("free", {
-    description = "Forcefully frees a chunk",
+    description = "Forcefully frees a parcel",
     infaction = false,
     global_privileges = {"faction_admin"},
-    on_success = function(player, faction, pos, chunkpos, args)
-        local fac = factions.chunks[chunkpos]
+    on_success = function(player, faction, pos, parcelpos, args)
+        local fac = factions.parcels[parcelpos]
         if not fac then
             send_error(player, "No claim at this position")
             return false
         end
-        faction:unclaim_chunk(chunkpos)
+        faction:unclaim_parcel(parcelpos)
         return true
     end
 })
 
 factions.register_command("chat", {
     description = "Send a message to your faction's members",
-    on_success = function(player, faction, pos, chunkpos, args)
+    on_success = function(player, faction, pos, parcelpos, args)
         local msg = table.concat(args.other, " ")
         faction:broadcast(msg, player)
     end
@@ -562,7 +562,7 @@ factions_chat.cmdhandler = function (playername,parameter)
 
 	local player = minetest.env:get_player_by_name(playername)
 	local params = parameter:split(" ")
-    local player_faction = factions.players[playersname]
+    local player_faction = factions.players[playername]
 
 	if parameter == nil or
 		parameter == "" then

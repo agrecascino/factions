@@ -492,6 +492,8 @@ function factions.load()
 		local raw_data = file:read("*a")
 		factions.factions = minetest.deserialize(raw_data)
         for facname, faction in pairs(factions.factions) do
+            faction.attacked_parcels = {}
+            faction.maxpower = 0.
             minetest.log("action", facname..","..faction.name)
             for player, rank in pairs(faction.players) do
                 minetest.log("action", player..","..rank)
@@ -501,6 +503,7 @@ function factions.load()
                 factions.parcels[parcelpos] = facname
             end
             setmetatable(faction, factions.Faction)
+            -- compatiblity and later additions
         end
 		file:close()
     end
@@ -609,7 +612,7 @@ minetest.is_protected = function(pos, player)
     if not parcel_faction then
         return default_is_protected(pos, player)
     else
-        parcel_faction = factions.factions[faction]
+        parcel_faction = factions.factions[parcel_faction]
         if parcel_faction.attacked_parcels[parcelpos] then -- chunk is being attacked
             if parcel_faction.attacked_parcels[parcelpos][player_faction] then -- attacked by the player's faction
                 return false

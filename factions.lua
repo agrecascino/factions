@@ -344,11 +344,11 @@ function factions.Faction.on_player_join(self, player)
 end
 
 function factions.Faction.on_claim_parcel(self, pos)
-    self:broadcast("Chunk ("..pos..") has been claimed.")
+    self:broadcast("Parcel ("..pos..") has been claimed.")
 end
 
 function factions.Faction.on_unclaim_parcel(self, pos)
-    self:broadcast("Chunk ("..pos..") has been unclaimed.")
+    self:broadcast("Parcel ("..pos..") has been unclaimed.")
 end
 
 function factions.Faction.on_disband(self, pos)

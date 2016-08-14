@@ -112,6 +112,7 @@ factions.new_faction = function(name)
     local faction =  factions.Faction:new(nil)
     faction.name = name
     factions.factions[name] = faction
+    faction:on_create()
     factions.save()
     return faction
 end

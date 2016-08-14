@@ -171,6 +171,7 @@ function factions.Faction.claim_chunk(self, chunkpos)
     self:on_claim_chunk(chunkpos)
     factions.save()
 end
+
 --! @brief claim a chunk, update power and update global chunks table
 function factions.Faction.unclaim_chunk(self, chunkpos)
     factions.chunks[chunkpos] = nil
@@ -303,16 +304,19 @@ function factions.Faction.delete_rank(self, rank, newrank)
     self:on_delete_rank(rank, newrank)
     factions.save()
 end
+
 --! @param newbanner texture string of the new banner
 function factions.Faction.set_banner(self, newbanner)
     self.banner = newbanner
     self:on_new_banner()
 end
+
 --! @brief set a player's rank
 function factions.Faction.promote(self, member, rank)
     self.players[member] = rank
     self:on_promote(member)
 end
+
 --! @brief send a message to all members
 function factions.Faction.broadcast(self, msg, sender)
     local message = self.name.."> "..msg
@@ -330,54 +334,71 @@ end
 function factions.Faction.on_create(self)  --! @brief called when the faction is added to the global faction list
     minetest.chat_send_all("Faction "..self.name.." has been created.")
 end
+
 function factions.Faction.on_player_leave(self, player)
     self:broadcast(player.." has left this faction.")
 end
+
 function factions.Faction.on_player_join(self, player)
     self:broadcast(player.." has joined this faction.")
 end
+
 function factions.Faction.on_claim_chunk(self, pos)
     self:broadcast("Chunk ("..pos..") has been claimed.")
 end
+
 function factions.Faction.on_unclaim_chunk(self, pos)
     self:broadcast("Chunk ("..pos..") has been unclaimed.")
 end
+
 function factions.Faction.on_disband(self, pos)
     minetest.chat_send_all("Faction "..self.name.." has been disbanded.")
 end
+
 function factions.Faction.on_new_leader(self)
     self:broadcast(self.leader.." is now the leader of this faction.")
 end
+
 function factions.Faction.on_change_description(self)
     self:broadcast("Faction description has been modified to: "..self.description)
 end
+
 function factions.Faction.on_player_invited(self, player)
     minetest.chat_send_player(player, "You have been invited to faction "..self.name)
 end
+
 function factions.Faction.on_toggle_join_free(self, player)
     self:broadcast("This faction is now invite-free.")
 end
+
 function factions.Faction.on_new_alliance(self, faction)
     self:broadcast("This faction is now allied with "..faction)
 end
+
 function factions.Faction.on_end_alliance(self, faction)
     self:broadcast("This faction is no longer allied with "..faction.."!")
 end
+
 function factions.Faction.on_set_spawn(self)
     self:broadcast("The faction spawn has been set to ("..util.coords3D_string(pos)..").")
 end
+
 function factions.Faction.on_add_rank(self, rank)
     self:broadcast("The rank "..rank.." has been created with privileges: "..table.concat(self.ranks[rank], ", "))
 end
+
 function factions.Faction.on_delete_rank(self, rank, newrank)
     self:broadcast("The rank "..rank.." has been deleted and replaced by "..newrank)
 end
+
 function factions.Faction.on_new_banner(self)
     self:broadcast("A new banner has been set.")
 end
+
 function factions.Faction.on_promote(self, member)
     minetest.chat_send_player(player, "You have been promoted to "..self.players[member])
 end
+
 function factions.Faction.on_revoke_invite(self, player)
     minetest.chat_send_player(player, "You are no longer invited to faction "..self.name)
 end

@@ -32,6 +32,7 @@ factions.power_per_parcel = .5
 factions.power_per_death = .25
 factions.power_per_tick = .125
 factions.tick_time = 60.
+factions.power_per_attack = 2.
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
@@ -360,6 +361,36 @@ function factions.Faction.is_online(self)
     return false
 end
 
+function factions.Faction.attack_parcel(self, parcelpos)
+    local attacked_faction = factions.parcels[parcelpos]
+    if attacked_faction then
+        attacked_faction = factions.factions[attacked_faction]
+        self.power = self.power - factions.power_per_attack
+        if attacked_faction.attacked_parcels[parcelpos] then 
+            attacked_faction.attacked_parcels[parcelpos][self.name] = true
+        else
+            attacked_faction.attacked_parcels[parcelpos] = {[self.name] = true}
+        end
+        attacked_faction:broadcast("Parcel ("..parcelpos..") is being attacked by "..self.name.."!!")
+        if self.power < 0. then -- punish memers
+            minetest.chat_send_all("Faction "..self.name.." has attacked too much and has now negative power!")
+        end
+        factions.save()
+    end
+end
+
+function factions.Faction.stop_attack(self, parcelpos)
+    local attacked_faction = factions.parcels[parcelpos]
+    if attacked_faction then
+        attacked_faction = factions.factions[attacked_faction]
+        if attacked_faction.attacked_parcels[parcelpos] then
+            attacked_faction.attacked_parcels[parcelpos][self.name] = nil
+            attacked_faction:broadcast("Parcel ("..self.name..") is no longer under attack.")
+        end
+        factions.save()
+    end
+end
+
 --------------------------
 -- callbacks for events --
 function factions.Faction.on_create(self)  --! @brief called when the faction is added to the global faction list
@@ -533,8 +564,14 @@ function factions.load()
             end
             setmetatable(faction, factions.Faction)
             -- compatiblity and later additions
-            if not faction.maxpower or faction.maxpower == 0. then
+            if not faction.maxpower or faction.maxpower <= 0. then
                 faction.maxpower = faction.power
+                if faction.power < 0. then
+                    faction.maxpower = 0.
+                end
+            end
+            if not faction.attacked_parcels then
+                faction.attacked_parcels = {}
             end
         end
 		file:close()
@@ -660,6 +697,12 @@ minetest.is_protected = function(pos, player)
     local parcelpos = factions.get_parcel_pos(pos)
     local parcel_faction = factions.parcels[parcelpos]
     local player_faction = factions.players[player]
+    -- check if wielding death banner
+    local player_info = minetest.get_player_by_name(player)
+    local player_wield = player_info:get_wielded_item()
+    if player_wield:get_name() == "banners:death_banner" and player_faction then --todo: check for allies, maybe for permissions
+        return not factions.factions[player_faction]:has_permission(player, "claim")
+    end
     if pos.y < factions.protection_max_depth then
         return false
     end

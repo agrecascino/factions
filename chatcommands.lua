@@ -316,7 +316,6 @@ factions.register_command("close", {
     description = "Make your faction invite-only.",
     on_success = function(player, faction, pos, parcelpos, args)
         faction:toggle_join_free(false)
-        --TODO: message
         return true
     end
 })
@@ -326,7 +325,6 @@ factions.register_command("open", {
     description = "Allow any player to join your faction.",
     on_success = function(player, faction, pos, parcelpos, args)
         faction:toggle_join_free(true)
-        --TODO: message
         return true
     end
 })
@@ -336,7 +334,6 @@ factions.register_command("description", {
     description = "Set your faction's description",
     on_success = function(player, faction, pos, parcelpos, args)
         faction:set_description(table.concat(args.other," "))
-        --TODO: message
         return true
     end
 })
@@ -491,7 +488,7 @@ factions.register_command("promote", {
 factions.register_command("power", {
     description = "Display your faction's power",
     on_success = function(player, faction, pos, parcelpos, args)
-        minetest.chat_send_player(player, "Power: "..faction.power)
+        minetest.chat_send_player(player, "Power: "..faction.power.."/"..faction.maxpower)
         return true
     end
 })
@@ -545,6 +542,14 @@ factions.register_command("chat", {
     on_success = function(player, faction, pos, parcelpos, args)
         local msg = table.concat(args.other, " ")
         faction:broadcast(msg, player)
+    end
+})
+
+factions.register_command("forceupdate", {
+    description = "Forces an update tick.",
+    global_privileges = {"faction_admin"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        factions.faction_tick()
     end
 })
 

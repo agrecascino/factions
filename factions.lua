@@ -29,6 +29,9 @@ factions.factions = {}
 --- settings
 factions.protection_max_depth = -512
 factions.power_per_parcel = .5
+factions.power_per_death = .25
+factions.power_per_tick = .125
+factions.tick_time = 60.
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
@@ -119,6 +122,9 @@ end
 
 function factions.Faction.increase_power(self, power)
     self.power = self.power + power
+    if self.power > self.maxpower then
+        self.power = self.maxpower
+    end
     factions.save()
 end
 
@@ -330,6 +336,16 @@ function factions.Faction.broadcast(self, msg, sender)
     end
 end
 
+--! @brief checks whether a faction has at least one connected player
+function factions.Faction.is_online(self)
+    for playername, _ in pairs(self.players) do
+        if minetest.get_player_by_name(playername) then
+            return true
+        end
+    end
+    return false
+end
+
 --------------------------
 -- callbacks for events --
 function factions.Faction.on_create(self)  --! @brief called when the faction is added to the global faction list
@@ -493,8 +509,6 @@ function factions.load()
 		local raw_data = file:read("*a")
 		factions.factions = minetest.deserialize(raw_data)
         for facname, faction in pairs(factions.factions) do
-            faction.attacked_parcels = {}
-            faction.maxpower = 0.
             minetest.log("action", facname..","..faction.name)
             for player, rank in pairs(faction.players) do
                 minetest.log("action", player..","..rank)
@@ -548,15 +562,34 @@ end
 			
 minetest.register_on_dieplayer(
     function(player)
+        local faction = factions.players[player:get_player_name()]
+        if not faction then
+            return true
+        end
+        faction = factions.factions[faction]
+        faction:decrease_power(factions.power_per_death)
+        return true
     end
 )
 
-local lastUpdate = 0.
+
+factions.faction_tick = function()
+    for facname, faction in pairs(factions.factions) do
+        if faction:is_online() then
+            faction:increase_power(factions.power_per_tick)
+        end
+    end
+end
+
+local hudUpdate = 0.
+local factionUpdate = 0.
+
 
 minetest.register_globalstep(
     function(dtime)
-        lastUpdate = lastUpdate + dtime
-        if lastUpdate > .5 then
+        hudUpdate = hudUpdate + dtime
+        factionUpdate = factionUpdate + dtime
+        if hudUpdate > .5 then
             local playerslist = minetest.get_connected_players()
             for i in pairs(playerslist) do
                 local player = playerslist[i]
@@ -573,6 +606,11 @@ minetest.register_globalstep(
                     alignment = {x=0, y=0},
                 })
             end
+            hudUpdate = 0.
+        end
+        if factionUpdate > factions.tick_time then
+            factions.faction_tick()
+            factionUpdate = 0.
         end
     end
 )
@@ -597,6 +635,7 @@ minetest.register_on_respawnplayer(
         end
     end
 )
+
 
 
 local default_is_protected = minetest.is_protected

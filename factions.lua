@@ -187,6 +187,7 @@ function factions.Faction.claim_parcel(self, parcelpos)
     factions.parcels[parcelpos] = self.name
     self.land[parcelpos] = true
     self:decrease_power(factions.power_per_parcel)
+    self:decrease_maxpower(factions.power_per_parcel)
     self:on_claim_parcel(parcelpos)
     factions.save()
 end
@@ -196,6 +197,7 @@ function factions.Faction.unclaim_parcel(self, parcelpos)
     factions.parcels[parcelpos] = nil
     self.land[parcelpos] = nil
     self:increase_power(factions.power_per_parcel)
+    self:increase_maxpower(factions.power_per_parcel)
     self:on_unclaim_parcel(parcelpos)
     factions.save()
 end

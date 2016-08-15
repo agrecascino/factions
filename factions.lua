@@ -699,6 +699,13 @@ minetest.is_protected = function(pos, player)
     local player_faction = factions.players[player]
     -- check if wielding death banner
     local player_info = minetest.get_player_by_name(player)
+    if not player_info then
+        if parcel_faction then
+            return true
+        else
+            return false
+        end
+    end
     local player_wield = player_info:get_wielded_item()
     if player_wield:get_name() == "banners:death_banner" and player_faction then --todo: check for allies, maybe for permissions
         return not factions.factions[player_faction]:has_permission(player, "claim")

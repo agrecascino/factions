@@ -476,7 +476,7 @@ factions.register_command("promote", {
     on_success = function(player, faction, pos, parcelpos, args)
         local rank = args.strings[1]
         if faction.ranks[rank] then
-            faction:promote(args.players[1], rank)
+            faction:promote(args.players[1]:get_player_name(), rank)
             return true
         else
             send_error(player, "The specified rank does not exist.")

@@ -533,6 +533,9 @@ function factions.load()
             end
             setmetatable(faction, factions.Faction)
             -- compatiblity and later additions
+            if not faction.maxpower or faction.maxpower == 0. then
+                faction.maxpower = faction.power
+            end
         end
 		file:close()
     end

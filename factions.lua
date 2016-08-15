@@ -133,6 +133,18 @@ function factions.Faction.decrease_power(self, power)
     factions.save()
 end
 
+function factions.Faction.increase_maxpower(self, power)
+    self.maxpower = self.maxpower + power
+    factions.save()
+end
+
+function factions.Faction.decrease_maxpower(self, power)
+    self.maxpower = self.maxpower - power
+    if self.maxpower < 0. then -- should not happen
+        self.maxpower = 0.
+    end
+end
+
 function factions.Faction.add_player(self, player, rank)
     self:on_player_join(player)
     self.players[player] = rank or self.default_rank

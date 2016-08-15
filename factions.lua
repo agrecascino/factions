@@ -385,7 +385,8 @@ function factions.Faction.stop_attack(self, parcelpos)
         attacked_faction = factions.factions[attacked_faction]
         if attacked_faction.attacked_parcels[parcelpos] then
             attacked_faction.attacked_parcels[parcelpos][self.name] = nil
-            attacked_faction:broadcast("Parcel ("..self.name..") is no longer under attack.")
+            attacked_faction:broadcast("Parcel ("..parcelpos..") is no longer under attack from "..self.name..".")
+            self:broadcast("Parcel ("..parcelpos..") has been reconquered by "..attacked_faction.name..".")
         end
         factions.save()
     end
@@ -694,6 +695,13 @@ minetest.register_on_respawnplayer(
 
 local default_is_protected = minetest.is_protected
 minetest.is_protected = function(pos, player)
+    if pos.y < factions.protection_max_depth then
+        return false
+    end
+    if factions.disallow_edit_nofac and not player_faction then
+        return true
+    end
+
     local parcelpos = factions.get_parcel_pos(pos)
     local parcel_faction = factions.parcels[parcelpos]
     local player_faction = factions.players[player]
@@ -710,24 +718,19 @@ minetest.is_protected = function(pos, player)
     if player_wield:get_name() == "banners:death_banner" and player_faction then --todo: check for allies, maybe for permissions
         return not factions.factions[player_faction]:has_permission(player, "claim")
     end
-    if pos.y < factions.protection_max_depth then
-        return false
-    end
-    if factions.disallow_edit_nofac and not player_faction then
-        return true
-    end
+    -- no faction
     if not parcel_faction then
         return default_is_protected(pos, player)
     else
         parcel_faction = factions.factions[parcel_faction]
-        if parcel_faction.attacked_parcels[parcelpos] then -- chunk is being attacked
+        if parcel_faction.name == player_faction then
+            return not parcel_faction:has_permission(player, "build")
+        elseif parcel_faction.attacked_parcels[parcelpos] then -- chunk is being attacked
             if parcel_faction.attacked_parcels[parcelpos][player_faction] then -- attacked by the player's faction
                 return false
             else
                 return true
             end
-        else
-            return not parcel_faction:has_permission(player, "build")
         end
     end
 end

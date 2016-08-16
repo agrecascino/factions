@@ -419,8 +419,8 @@ factions.register_command("delrank", {
     on_success = function(player, faction, pos, parcelpos, args)
         local rank = args.strings[1]
         local newrank = args.strings[2]
-        if not faction.ranks[rank] or not faction.ranks[rank] then
-            --TODO: error (one of either ranks do not exist)
+        if not faction.ranks[rank] or not faction.ranks[newrank] then
+            send_error(player, "One of the specified ranks do not exist.")
             return false
         end
         faction:delete_rank(rank, newrank)
@@ -488,7 +488,7 @@ factions.register_command("promote", {
 factions.register_command("power", {
     description = "Display your faction's power",
     on_success = function(player, faction, pos, parcelpos, args)
-        minetest.chat_send_player(player, "Power: "..faction.power.."/"..faction.maxpower)
+        minetest.chat_send_player(player, "Power: "..faction.power.."/"..faction.maxpower - faction.usedpower.."/"..faction.maxpower)
         return true
     end
 })

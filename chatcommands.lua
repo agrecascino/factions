@@ -419,7 +419,7 @@ factions.register_command("delrank", {
     on_success = function(player, faction, pos, parcelpos, args)
         local rank = args.strings[1]
         local newrank = args.strings[2]
-        if not faction.ranks[rank] or not faction.ranks[rank] then
+        if not faction.ranks[rank] or not faction.ranks[newrank] then
             --TODO: error (one of either ranks do not exist)
             return false
         end

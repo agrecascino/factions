@@ -420,7 +420,7 @@ factions.register_command("delrank", {
         local rank = args.strings[1]
         local newrank = args.strings[2]
         if not faction.ranks[rank] or not faction.ranks[newrank] then
-            --TODO: error (one of either ranks do not exist)
+            send_error(player, "One of the specified ranks do not exist.")
             return false
         end
         faction:delete_rank(rank, newrank)

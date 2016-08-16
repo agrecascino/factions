@@ -76,6 +76,8 @@ function factions.Faction:new(faction)
         power = 0.,
         --! @brief maximum power of a faction
         maxpower = 0.,
+        --! @brief power currently in use
+        usedpower = 0.,
         --! @brief list of player names
         players = {},
         --! @brief table of ranks/permissions
@@ -123,8 +125,8 @@ end
 
 function factions.Faction.increase_power(self, power)
     self.power = self.power + power
-    if self.power > self.maxpower then
-        self.power = self.maxpower
+    if self.power > self.maxpower  - self.usedpower then
+        self.power = self.maxpower - self.usedpower
     end
     factions.save()
 end
@@ -144,6 +146,25 @@ function factions.Faction.decrease_maxpower(self, power)
     if self.maxpower < 0. then -- should not happen
         self.maxpower = 0.
     end
+end
+
+function factions.Faction.increase_usedpower(self, power)
+    self.usedpower = self.usedpower + power
+end
+
+function factions.Faction.decrease_usedpower(self, power)
+    self.usedpower = self.usedpower - power
+    if self.usedpower < 0. then
+        self.usedpower = 0.
+    end
+end
+
+function factions.Faction.count_land(self)
+    local count = 0.
+    for k, v in pairs(self.land) do
+        count = count + 1
+    end
+    return count
 end
 
 function factions.Faction.add_player(self, player, rank)
@@ -188,7 +209,7 @@ function factions.Faction.claim_parcel(self, parcelpos)
     factions.parcels[parcelpos] = self.name
     self.land[parcelpos] = true
     self:decrease_power(factions.power_per_parcel)
-    self:decrease_maxpower(factions.power_per_parcel)
+    self:increase_usedpower(factions.power_per_parcel)
     self:on_claim_parcel(parcelpos)
     factions.save()
 end
@@ -198,7 +219,7 @@ function factions.Faction.unclaim_parcel(self, parcelpos)
     factions.parcels[parcelpos] = nil
     self.land[parcelpos] = nil
     self:increase_power(factions.power_per_parcel)
-    self:increase_maxpower(factions.power_per_parcel)
+    self:decrease_usedpower(factions.power_per_parcel)
     self:on_unclaim_parcel(parcelpos)
     factions.save()
 end
@@ -716,7 +737,8 @@ minetest.is_protected = function(pos, player)
     end
     local player_wield = player_info:get_wielded_item()
     if player_wield:get_name() == "banners:death_banner" and player_faction then --todo: check for allies, maybe for permissions
-        return not factions.factions[player_faction]:has_permission(player, "claim")
+        player_faction = factions.factions[player_faction]
+        return not player_faction:has_permission(player, "claim") and player_faction.power > 0.
     end
     -- no faction
     if not parcel_faction then

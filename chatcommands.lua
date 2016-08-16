@@ -488,7 +488,7 @@ factions.register_command("promote", {
 factions.register_command("power", {
     description = "Display your faction's power",
     on_success = function(player, faction, pos, parcelpos, args)
-        minetest.chat_send_player(player, "Power: "..faction.power.."/"..faction.maxpower)
+        minetest.chat_send_player(player, "Power: "..faction.power.."/"..faction.maxpower - faction.usedpower.."/"..faction.maxpower)
         return true
     end
 })

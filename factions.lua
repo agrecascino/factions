@@ -595,6 +595,9 @@ function factions.load()
             if not faction.attacked_parcels then
                 faction.attacked_parcels = {}
             end
+            if not faction.usedpower then
+                faction.usedpower = faction:count_land() * factions.power_per_parcel
+            end
         end
 		file:close()
     end

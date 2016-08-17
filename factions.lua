@@ -756,6 +756,8 @@ minetest.is_protected = function(pos, player)
             else
                 return true
             end
+        else
+            return true
         end
     end
 end

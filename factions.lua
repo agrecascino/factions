@@ -107,6 +107,8 @@ function factions.Faction:new(faction)
         join_free = false,
         --! @brief banner texture string
         banner = "bg_white.png",
+        --! @brief gives certain privileges
+        is_admin = false
     } or faction
     setmetatable(faction, self)
     return faction
@@ -493,6 +495,33 @@ function factions.get_parcel_pos(pos)
     return math.floor(pos.x / 16.)..","..math.floor(pos.z / 16.)
 end
 
+function factions.get_player_faction(payername)
+    local facname = factions.players[playername]
+    if facname then
+        local faction = factions.factions[facname]
+        return faction
+    end
+    return nil
+end
+
+function factions.get_parcel_faction(parcelpos)
+    local facname = factions.parcels[playername]
+    if facname then
+        local faction = factions.factions[facname]
+        return faction
+    end
+    return nil
+end
+
+function factions.get_faction(facname)
+    return factions.factions[facname]
+end
+
+function factions.get_faction_at(pos)
+    local parcelpos = factions.get_parcel_pos(pos)
+    return factions.get_parcel_faction(parcelpos)
+end
+
 
 -------------------------------------------------------------------------------
 -- name: add_faction(name)
@@ -741,7 +770,8 @@ minetest.is_protected = function(pos, player)
     local player_wield = player_info:get_wielded_item()
     if player_wield:get_name() == "banners:death_banner" and player_faction then --todo: check for allies, maybe for permissions
         player_faction = factions.factions[player_faction]
-        return not player_faction:has_permission(player, "claim") and player_faction.power > 0.
+        parcel_faction = factions.factions[parcel_faction]
+        return not player_faction:has_permission(player, "claim") and player_faction.power > 0. and not parcel_faction.is_admin
     end
     -- no faction
     if not parcel_faction then

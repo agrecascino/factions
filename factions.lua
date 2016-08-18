@@ -33,12 +33,16 @@ factions.power_per_death = .25
 factions.power_per_tick = .125
 factions.tick_time = 60.
 factions.power_per_attack = 2.
+factions.faction_name_max_length = 50
+factions.rank_name_max_length = 25
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
 --! @param name String containing the faction's name
 factions.can_create_faction = function(name)
-    if factions.factions[name] then
+    if #name > factions.faction_name_max_length then
+        return false
+    elseif factions.factions[name] then
         return false
     else
         return true
@@ -107,6 +111,8 @@ function factions.Faction:new(faction)
         join_free = false,
         --! @brief banner texture string
         banner = "bg_white.png",
+        --! @brief gives certain privileges
+        is_admin = false
     } or faction
     setmetatable(faction, self)
     return faction
@@ -493,6 +499,33 @@ function factions.get_parcel_pos(pos)
     return math.floor(pos.x / 16.)..","..math.floor(pos.z / 16.)
 end
 
+function factions.get_player_faction(playername)
+    local facname = factions.players[playername]
+    if facname then
+        local faction = factions.factions[facname]
+        return faction
+    end
+    return nil
+end
+
+function factions.get_parcel_faction(parcelpos)
+    local facname = factions.parcels[parcelpos]
+    if facname then
+        local faction = factions.factions[facname]
+        return faction
+    end
+    return nil
+end
+
+function factions.get_faction(facname)
+    return factions.factions[facname]
+end
+
+function factions.get_faction_at(pos)
+    local parcelpos = factions.get_parcel_pos(pos)
+    return factions.get_parcel_faction(parcelpos)
+end
+
 
 -------------------------------------------------------------------------------
 -- name: add_faction(name)
@@ -526,13 +559,13 @@ end
 -------------------------------------------------------------------------------
 function factions.get_faction_list()
 
-	local retval = {}
-	
-	for key,value in pairs(factions.factions) do
-		table.insert(retval,key)
-	end
-	
-	return retval
+    local retval = {}
+
+    for key,value in pairs(factions.factions) do
+        table.insert(retval,key)
+    end
+
+    return retval
 end
 
 -------------------------------------------------------------------------------
@@ -544,20 +577,20 @@ end
 -------------------------------------------------------------------------------
 function factions.save()
 
-	--saving is done much more often than reading data to avoid delay
-	--due to figuring out which data to save and which is temporary only
-	--all data is saved here
-	--this implies data needs to be cleant up on load
-	
-	local file,error = io.open(factions_worldid .. "/" .. "factions.conf","w")
-	
-	if file ~= nil then
-		file:write(minetest.serialize(factions.factions))
-		file:close()
-	else
-		minetest.log("error","MOD factions: unable to save factions world specific data!: " .. error)
-	end
-	
+    --saving is done much more often than reading data to avoid delay
+    --due to figuring out which data to save and which is temporary only
+    --all data is saved here
+    --this implies data needs to be cleant up on load
+
+    local file,error = io.open(factions_worldid .. "/" .. "factions.conf","w")
+
+    if file ~= nil then
+        file:write(minetest.serialize(factions.factions))
+        file:close()
+    else
+        minetest.log("error","MOD factions: unable to save factions world specific data!: " .. error)
+    end
+
 end
 
 -------------------------------------------------------------------------------
@@ -570,11 +603,11 @@ end
 --! @return true/false
 -------------------------------------------------------------------------------
 function factions.load()
-	local file,error = io.open(factions_worldid .. "/" .. "factions.conf","r")
-	
-	if file ~= nil then
-		local raw_data = file:read("*a")
-		factions.factions = minetest.deserialize(raw_data)
+    local file,error = io.open(factions_worldid .. "/" .. "factions.conf","r")
+
+    if file ~= nil then
+        local raw_data = file:read("*a")
+        factions.factions = minetest.deserialize(raw_data)
         for facname, faction in pairs(factions.factions) do
             minetest.log("action", facname..","..faction.name)
             for player, rank in pairs(faction.players) do
@@ -598,8 +631,11 @@ function factions.load()
             if not faction.usedpower then
                 faction.usedpower = faction:count_land() * factions.power_per_parcel
             end
+            if #faction.name > factions.faction_name_max_length then
+                faction:disband()
+            end
         end
-		file:close()
+        file:close()
     end
 end
 
@@ -638,17 +674,16 @@ function factions.convert(filename)
     end
     return true
 end
-			
+
 minetest.register_on_dieplayer(
-    function(player)
-        local faction = factions.players[player:get_player_name()]
-        if not faction then
-            return true
-        end
-        faction = factions.factions[faction]
-        faction:decrease_power(factions.power_per_death)
+function(player)
+    local faction = factions.get_player_faction(player:get_player_name())
+    if not faction then
         return true
     end
+    faction:decrease_power(factions.power_per_death)
+    return true
+end
 )
 
 
@@ -665,46 +700,43 @@ local factionUpdate = 0.
 
 
 minetest.register_globalstep(
-    function(dtime)
-        hudUpdate = hudUpdate + dtime
-        factionUpdate = factionUpdate + dtime
-        if hudUpdate > .5 then
-            local playerslist = minetest.get_connected_players()
-            for i in pairs(playerslist) do
-                local player = playerslist[i]
-                local parcelpos = factions.get_parcel_pos(player:getpos())
-                local faction = factions.parcels[parcelpos]
-                player:hud_remove("factionLand")
-                player:hud_add({
-                    hud_elem_type = "text",
-                    name = "factionLand",
-                    number = 0xFFFFFF,
-                    position = {x=0.1, y = .98},
-                    text = faction or "Wilderness",
-                    scale = {x=1, y=1},
-                    alignment = {x=0, y=0},
-                })
-            end
-            hudUpdate = 0.
+function(dtime)
+    hudUpdate = hudUpdate + dtime
+    factionUpdate = factionUpdate + dtime
+    if hudUpdate > .5 then
+        local playerslist = minetest.get_connected_players()
+        for i in pairs(playerslist) do
+            local player = playerslist[i]
+            local faction = factions.get_faction_at(player:getpos())
+            player:hud_remove("factionLand")
+            player:hud_add({
+                hud_elem_type = "text",
+                name = "factionLand",
+                number = 0xFFFFFF,
+                position = {x=0.1, y = .98},
+                text = (faction and faction.name) or "Wilderness",
+                scale = {x=1, y=1},
+                alignment = {x=0, y=0},
+            })
         end
-        if factionUpdate > factions.tick_time then
-            factions.faction_tick()
-            factionUpdate = 0.
-        end
+        hudUpdate = 0.
     end
+    if factionUpdate > factions.tick_time then
+        factions.faction_tick()
+        factionUpdate = 0.
+    end
+end
 )
 minetest.register_on_joinplayer(
-    function(player)
-    end
+function(player)
+end
 )
 minetest.register_on_respawnplayer(
     function(player)
-        local playername = player:get_player_name()
-        local faction = factions.players[playername]
+        local faction = factions.get_player_faction(player:get_player_name())
         if not faction then
             return false
         else
-            faction = factions.factions[faction]
             if not faction.spawn then
                 return false
             else
@@ -727,8 +759,8 @@ minetest.is_protected = function(pos, player)
     end
 
     local parcelpos = factions.get_parcel_pos(pos)
-    local parcel_faction = factions.parcels[parcelpos]
-    local player_faction = factions.players[player]
+    local parcel_faction = factions.get_parcel_faction(parcelpos)
+    local player_faction = factions.get_player_faction(player)
     -- check if wielding death banner
     local player_info = minetest.get_player_by_name(player)
     if not player_info then
@@ -740,14 +772,12 @@ minetest.is_protected = function(pos, player)
     end
     local player_wield = player_info:get_wielded_item()
     if player_wield:get_name() == "banners:death_banner" and player_faction then --todo: check for allies, maybe for permissions
-        player_faction = factions.factions[player_faction]
-        return not player_faction:has_permission(player, "claim") and player_faction.power > 0.
+        return not player_faction:has_permission(player, "claim") and player_faction.power > 0. and not parcel_faction.is_admin
     end
     -- no faction
     if not parcel_faction then
         return default_is_protected(pos, player)
     else
-        parcel_faction = factions.factions[parcel_faction]
         if parcel_faction.name == player_faction then
             return not parcel_faction:has_permission(player, "build")
         elseif parcel_faction.attacked_parcels[parcelpos] then -- chunk is being attacked

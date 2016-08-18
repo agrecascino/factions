@@ -250,12 +250,12 @@ factions.register_command("kick", {
     description = "Kick a player from your faction.",
     on_success = function(player, faction, pos, parcelpos, args)
         local victim = args.players[1]
-        if factions.players[victim.name] == faction.name
-            and victim.name ~= faction.leader then -- can't kick da king
+        if factions.players[victim:get_player_name()] == faction.name
+            and victim:get_player_name() ~= faction.leader then -- can't kick da king
             faction:remove_player(player)
             return true
         else
-            send_error(player, "Cannot kick player "..victim.name)
+            send_error(player, "Cannot kick player "..victim:get_player_name())
             return false
         end
     end
@@ -403,8 +403,12 @@ factions.register_command("newrank", {
     faction_permissions = {"ranks"},
     on_success = function(player, faction, pos, parcelpos, args)
         local rank = args.strings[1]
+        if #rank > factions.rank then
+            send_error(player, "Go away Todd")
+            return false
+        end
         if faction.ranks[rank] then
-            --TODO: rank already exists
+            send_error(player, "Rank already exists")
             return false
         end
         faction:add_rank(rank, args.other)

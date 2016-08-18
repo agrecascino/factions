@@ -34,6 +34,7 @@ factions.power_per_tick = .125
 factions.tick_time = 60.
 factions.power_per_attack = 2.
 factions.faction_name_max_length = 50
+factions.rank_name_max_length = 25
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)

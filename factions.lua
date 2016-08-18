@@ -33,12 +33,15 @@ factions.power_per_death = .25
 factions.power_per_tick = .125
 factions.tick_time = 60.
 factions.power_per_attack = 2.
+factions.faction_name_max_length = 50
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
 --! @param name String containing the faction's name
 factions.can_create_faction = function(name)
-    if factions.factions[name] then
+    if #name > factions.faction_name_max_length then
+        return false
+    elseif factions.factions[name] then
         return false
     else
         return true
@@ -626,6 +629,9 @@ function factions.load()
             end
             if not faction.usedpower then
                 faction.usedpower = faction:count_land() * factions.power_per_parcel
+            end
+            if #faction.name > factions.faction_name_max_length then
+                faction:disband()
             end
         end
         file:close()

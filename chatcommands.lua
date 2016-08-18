@@ -403,8 +403,12 @@ factions.register_command("newrank", {
     faction_permissions = {"ranks"},
     on_success = function(player, faction, pos, parcelpos, args)
         local rank = args.strings[1]
+        if #rank > factions.rank then
+            send_error(player, "Go away Todd")
+            return false
+        end
         if faction.ranks[rank] then
-            --TODO: rank already exists
+            send_error(player, "Rank already exists")
             return false
         end
         faction:add_rank(rank, args.other)

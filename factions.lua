@@ -495,17 +495,19 @@ function factions.get_parcel_pos(pos)
     return math.floor(pos.x / 16.)..","..math.floor(pos.z / 16.)
 end
 
-function factions.get_player_faction(payername)
+function factions.get_player_faction(playername)
     local facname = factions.players[playername]
     if facname then
+        minetest.chat_send_all(facname)
         local faction = factions.factions[facname]
         return faction
     end
+    minetest.chat_send_all(playername)
     return nil
 end
 
 function factions.get_parcel_faction(parcelpos)
-    local facname = factions.parcels[playername]
+    local facname = factions.parcels[parcelpos]
     if facname then
         local faction = factions.factions[facname]
         return faction
@@ -670,11 +672,10 @@ end
 			
 minetest.register_on_dieplayer(
     function(player)
-        local faction = factions.players[player:get_player_name()]
+        local faction = factions.get_player_faction(player:get_player_name())
         if not faction then
             return true
         end
-        faction = factions.factions[faction]
         faction:decrease_power(factions.power_per_death)
         return true
     end
@@ -701,15 +702,14 @@ minetest.register_globalstep(
             local playerslist = minetest.get_connected_players()
             for i in pairs(playerslist) do
                 local player = playerslist[i]
-                local parcelpos = factions.get_parcel_pos(player:getpos())
-                local faction = factions.parcels[parcelpos]
+                local faction = factions.get_faction_at(player:getpos())
                 player:hud_remove("factionLand")
                 player:hud_add({
                     hud_elem_type = "text",
                     name = "factionLand",
                     number = 0xFFFFFF,
                     position = {x=0.1, y = .98},
-                    text = faction or "Wilderness",
+                    text = (faction and faction.name) or "Wilderness",
                     scale = {x=1, y=1},
                     alignment = {x=0, y=0},
                 })

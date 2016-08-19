@@ -389,9 +389,8 @@ function factions.Faction.is_online(self)
 end
 
 function factions.Faction.attack_parcel(self, parcelpos)
-    local attacked_faction = factions.parcels[parcelpos]
+    local attacked_faction = factions.get_parcel_faction(parcelpos)
     if attacked_faction then
-        attacked_faction = factions.factions[attacked_faction]
         self.power = self.power - factions.power_per_attack
         if attacked_faction.attacked_parcels[parcelpos] then 
             attacked_faction.attacked_parcels[parcelpos][self.name] = true
@@ -783,16 +782,16 @@ minetest.is_protected = function(pos, player)
         return not player_faction:has_permission(player, "claim") and player_faction.power > 0. and not parcel_faction.is_admin
     end
     -- no faction
-    if not parcel_faction or not player_faction then
+    if not parcel_faction then
         return default_is_protected(pos, player)
-    elseif not player_faction then
-        return true
-    else
-        if parcel_faction.name == player_faction then
+    elseif player_faction then
+        if parcel_faction.name == player_faction.name then
             return not parcel_faction:has_permission(player, "build")
         else
             return not parcel_faction:parcel_is_attacked_by(parcelpos, player_faction)
         end
+    else
+        return true
     end
 end
 

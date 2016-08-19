@@ -54,7 +54,7 @@ factions.register_command = function(cmd_name, cmd)
                 local argtype = self.format[i]
                 local arg = argv[i]
                 if argtype == "faction" then
-                    local fac = factions.factions[arg]
+                    local fac = factions.get_faction(arg)
                     if not fac then
                         send_error(player, "Specified faction "..arg.." does not exist")
                         return false
@@ -63,9 +63,8 @@ factions.register_command = function(cmd_name, cmd)
                     end
                 elseif argtype == "player" then
                     local pl = minetest.get_player_by_name(arg)
-                    if not pl then
+                    if not pl or not factions.player[arg] then
                         send_error(player, "Player is not online.")
-                        --TODO: track existing players for offsync invites and the like
                         return false
                     else
                         table.insert(args.players, pl)
@@ -83,12 +82,11 @@ factions.register_command = function(cmd_name, cmd)
             end
 
             -- checks permissions
-            local player_faction = factions.players[player]
+            local player_faction = factions.get_player_faction(player)
             if self.infaction and not player_faction then
                 minetest.chat_send_player(player, "This command is only available within a faction.")
                 return false
             end
-            player_faction = factions.factions[player_faction]
             if self.faction_permissions then
                 for i in ipairs(self.faction_permissions) do
                     if not player_faction:has_permission(player, self.faction_permissions[i]) then
@@ -166,11 +164,11 @@ factions.register_command ("claim", {
             faction:claim_parcel(parcelpos)
             return true
         else
-            local parcel = factions.parcels[parcelpos]
-            if not parcel then
+            local parcel_faction = factions.get_parcel_faction(parcelpos)
+            if not parcel_faction then
                 send_error(player, "You faction cannot claim any (more) parcel(s).")
                 return false
-            elseif parcel == faction.name then
+            elseif parcel_faction.name == faction.name then
                 send_error(player, "This parcel already belongs to your faction.")
                 return false
             else
@@ -185,8 +183,8 @@ factions.register_command("unclaim", {
     faction_permissions = {"claim"},
     description = "Unclaim the plot of land you're on.",
     on_success = function(player, faction, pos, parcelpos, args)
-        local parcel = factions.parcels[parcelpos]
-        if parcel ~= faction.name then
+        local parcel_faction = factions.get_parcel_faction(parcelpos)
+        if parcel_faction.name ~= faction.name then
             send_error(player, "This parcel does not belong to you.")
             return false
         else
@@ -250,12 +248,15 @@ factions.register_command("kick", {
     description = "Kick a player from your faction.",
     on_success = function(player, faction, pos, parcelpos, args)
         local victim = args.players[1]
-        if factions.players[victim:get_player_name()] == faction.name
-            and victim:get_player_name() ~= faction.leader then -- can't kick da king
+        local victim_faction = factions.get_player_faction(victim:get_player_name())
+        if victim_faction and victim:get_player_name() ~= faction.leader then -- can't kick da king
             faction:remove_player(player)
             return true
+        elseif not victim_faction then
+            send_error(player, victim:get_player_name().." is not in your faction.")
+            return false
         else
-            send_error(player, "Cannot kick player "..victim:get_player_name())
+            send_error(player, victim:get_player_name().." cannot be kicked from your faction.")
             return false
         end
     end
@@ -344,7 +345,6 @@ factions.register_command("invite", {
     description = "Invite a player to your faction.",
     on_success = function(player, faction, pos, parcelpos, args)
         faction:invite_player(args.players[1]:get_player_name())
-        --TODO: message
         return true
     end
 })
@@ -355,7 +355,6 @@ factions.register_command("uninvite", {
     description = "Revoke a player's invite.",
     on_success = function(player, faction, pos, parcelpos, args)
         faction:revoke_invite(args.players[1]:get_player_name())
-        --TODO: message
         return true
     end
 })
@@ -367,7 +366,6 @@ factions.register_command("delete", {
     description = "Delete a faction.",
     on_success = function(player, faction, pos, parcelpos, args)
         args.factions[1]:disband()
-        --TODO: message
         return true
     end
 })
@@ -445,8 +443,9 @@ factions.register_command("where", {
     description = "See whose parcel you stand on.",
     infaction = false,
     on_success = function(player, faction, pos, parcelpos, args)
-        local parcel = factions.parcels[parcelpos]
-        minetest.chat_send_player(player, "You are standing on parcel "..parcelpos..", part of "..(parcel or "Wilderness"))
+        local parcel_faction = factions.get_parcel_faction(parcelpos)
+        local place_name = (parcel_faction and parcel_faction.name) or "Wilderness"
+        minetest.chat_send_player(player, "You are standing on parcel "..parcelpos..", part of "..place_name)
         return true
     end
 })
@@ -531,13 +530,14 @@ factions.register_command("free", {
     infaction = false,
     global_privileges = {"faction_admin"},
     on_success = function(player, faction, pos, parcelpos, args)
-        local fac = factions.parcels[parcelpos]
-        if not fac then
+        local parcel_faction = factions.get_parcel_faction(parcelpos)
+        if not parcel_faction then
             send_error(player, "No claim at this position")
             return false
+        else
+            parcel_faction:unclaim_parcel(parcelpos)
+            return true
         end
-        faction:unclaim_parcel(parcelpos)
-        return true
     end
 })
 
@@ -571,12 +571,12 @@ factions_chat.cmdhandler = function (playername,parameter)
 
 	local player = minetest.env:get_player_by_name(playername)
 	local params = parameter:split(" ")
-    local player_faction = factions.players[playername]
+    local player_faction = factions.get_player_faction(playername)
 
 	if parameter == nil or
 		parameter == "" then
         if player_faction then
-            minetest.chat_send_player(playername, "You are in faction "..player_faction..". Type /f help for a list of commands.")
+            minetest.chat_send_player(playername, "You are in faction "..player_faction.name..". Type /f help for a list of commands.")
         else
             minetest.chat_send_player(playername, "You are part of no faction")
         end

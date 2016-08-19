@@ -419,6 +419,14 @@ function factions.Faction.stop_attack(self, parcelpos)
     end
 end
 
+function factions.Faction.parcel_is_attacked_by(self, parcelpos, faction)
+    if self.attacked_parcels[parcelpos] then
+        return self.attacked_parcels[parcelpos][faction.name]
+    else
+        return false
+    end
+end
+
 --------------------------
 -- callbacks for events --
 function factions.Faction.on_create(self)  --! @brief called when the faction is added to the global faction list
@@ -777,17 +785,13 @@ minetest.is_protected = function(pos, player)
     -- no faction
     if not parcel_faction then
         return default_is_protected(pos, player)
+    elseif not player_faction then
+        return true
     else
         if parcel_faction.name == player_faction then
             return not parcel_faction:has_permission(player, "build")
-        elseif parcel_faction.attacked_parcels[parcelpos] then -- chunk is being attacked
-            if parcel_faction.attacked_parcels[parcelpos][player_faction] then -- attacked by the player's faction
-                return false
-            else
-                return true
-            end
         else
-            return true
+            return not parcel_faction:parcel_is_attacked_by(parcelpos, player_faction)
         end
     end
 end

@@ -32,7 +32,7 @@ factions.power_per_parcel = .5
 factions.power_per_death = .25
 factions.power_per_tick = .125
 factions.tick_time = 60.
-factions.power_per_attack = 2.
+factions.power_per_attack = 10.
 factions.faction_name_max_length = 50
 factions.rank_name_max_length = 25
 

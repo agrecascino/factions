@@ -252,7 +252,7 @@ factions.register_command("kick", {
         local victim = args.players[1]
         if factions.players[victim:get_player_name()] == faction.name
             and victim:get_player_name() ~= faction.leader then -- can't kick da king
-            faction:remove_player(player)
+            faction:remove_player(victim)
             return true
         else
             send_error(player, "Cannot kick player "..victim:get_player_name())

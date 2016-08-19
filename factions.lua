@@ -234,14 +234,14 @@ function factions.Faction.unclaim_parcel(self, parcelpos)
 end
 
 --! @brief disband faction, updates global players and parcels table
-function factions.Faction.disband(self)
+function factions.Faction.disband(self, reason)
     for k, _ in pairs(self.players) do -- remove players affiliation
         factions.players[k] = nil
     end
     for k, v in pairs(self.land) do -- remove parcel claims
         factions.parcels[k] = nil
     end
-    self:on_disband()
+    self:on_disband(reason)
     factions.factions[self.name] = nil
     factions.save()
 end
@@ -451,8 +451,12 @@ function factions.Faction.on_unclaim_parcel(self, pos)
     self:broadcast("Parcel ("..pos..") has been unclaimed.")
 end
 
-function factions.Faction.on_disband(self, pos)
-    minetest.chat_send_all("Faction "..self.name.." has been disbanded.")
+function factions.Faction.on_disband(self, reason)
+    local msg = "Faction "..self.name.." has been disbanded."
+    if reason then
+        msg = msg.." ("..reason..")"
+    end
+    minetest.chat_send_all(msg)
 end
 
 function factions.Faction.on_new_leader(self)

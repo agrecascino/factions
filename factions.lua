@@ -778,7 +778,7 @@ minetest.is_protected = function(pos, player)
     if not parcel_faction then
         return default_is_protected(pos, player)
     else
-        if parcel_faction.name == player_faction then
+        if parcel_faction.name == player_faction.name then
             return not parcel_faction:has_permission(player, "build")
         elseif parcel_faction.attacked_parcels[parcelpos] then -- chunk is being attacked
             if parcel_faction.attacked_parcels[parcelpos][player_faction] then -- attacked by the player's faction

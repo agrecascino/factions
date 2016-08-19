@@ -783,7 +783,7 @@ minetest.is_protected = function(pos, player)
         return not player_faction:has_permission(player, "claim") and player_faction.power > 0. and not parcel_faction.is_admin
     end
     -- no faction
-    if not parcel_faction then
+    if not parcel_faction or not player_faction then
         return default_is_protected(pos, player)
     elseif not player_faction then
         return true

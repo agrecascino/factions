@@ -35,6 +35,7 @@ factions.tick_time = 60.
 factions.power_per_attack = 10.
 factions.faction_name_max_length = 50
 factions.rank_name_max_length = 25
+factions.maximum_faction_inactivity = 604800 -- 1 week
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
@@ -112,7 +113,9 @@ function factions.Faction:new(faction)
         --! @brief banner texture string
         banner = "bg_white.png",
         --! @brief gives certain privileges
-        is_admin = false
+        is_admin = false,
+        --! @brief last time anyone logged on
+        last_logon = os.time(),
     } or faction
     setmetatable(faction, self)
     return faction
@@ -641,6 +644,9 @@ function factions.load()
             if #faction.name > factions.faction_name_max_length then
                 faction:disband()
             end
+            if not faction.last_logon then
+                faction.last_logon = os.time()
+            end
         end
         file:close()
     end
@@ -695,9 +701,13 @@ end
 
 
 factions.faction_tick = function()
+    local now = os.time()
     for facname, faction in pairs(factions.factions) do
         if faction:is_online() then
             faction:increase_power(factions.power_per_tick)
+        end
+        if faction.last_logon > factions.maximum_faction_inactivity then
+            faction:disband()
         end
     end
 end

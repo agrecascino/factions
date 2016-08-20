@@ -248,15 +248,9 @@ factions.register_command("kick", {
     description = "Kick a player from your faction.",
     on_success = function(player, faction, pos, parcelpos, args)
         local victim = args.players[1]
-<<<<<<< HEAD
-        if factions.players[victim:get_player_name()] == faction.name
-            and victim:get_player_name() ~= faction.leader then -- can't kick da king
-            faction:remove_player(victim)
-=======
         local victim_faction = factions.get_player_faction(victim:get_player_name())
         if victim_faction and victim:get_player_name() ~= faction.leader then -- can't kick da king
             faction:remove_player(player)
->>>>>>> 4d53e4cc4017fc499bf9c966cd3a6de5cacbe0e8
             return true
         elseif not victim_faction then
             send_error(player, victim:get_player_name().." is not in your faction.")

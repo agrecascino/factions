@@ -32,9 +32,10 @@ factions.power_per_parcel = .5
 factions.power_per_death = .25
 factions.power_per_tick = .125
 factions.tick_time = 60.
-factions.power_per_attack = 2.
+factions.power_per_attack = 10.
 factions.faction_name_max_length = 50
 factions.rank_name_max_length = 25
+factions.maximum_faction_inactivity = 604800 -- 1 week
 
 ---------------------
 --! @brief returns whether a faction can be created or not (allows for implementation of blacklists and the like)
@@ -112,7 +113,9 @@ function factions.Faction:new(faction)
         --! @brief banner texture string
         banner = "bg_white.png",
         --! @brief gives certain privileges
-        is_admin = false
+        is_admin = false,
+        --! @brief last time anyone logged on
+        last_logon = os.time(),
     } or faction
     setmetatable(faction, self)
     return faction
@@ -231,14 +234,14 @@ function factions.Faction.unclaim_parcel(self, parcelpos)
 end
 
 --! @brief disband faction, updates global players and parcels table
-function factions.Faction.disband(self)
+function factions.Faction.disband(self, reason)
     for k, _ in pairs(self.players) do -- remove players affiliation
         factions.players[k] = nil
     end
     for k, v in pairs(self.land) do -- remove parcel claims
         factions.parcels[k] = nil
     end
-    self:on_disband()
+    self:on_disband(reason)
     factions.factions[self.name] = nil
     factions.save()
 end
@@ -389,9 +392,8 @@ function factions.Faction.is_online(self)
 end
 
 function factions.Faction.attack_parcel(self, parcelpos)
-    local attacked_faction = factions.parcels[parcelpos]
+    local attacked_faction = factions.get_parcel_faction(parcelpos)
     if attacked_faction then
-        attacked_faction = factions.factions[attacked_faction]
         self.power = self.power - factions.power_per_attack
         if attacked_faction.attacked_parcels[parcelpos] then 
             attacked_faction.attacked_parcels[parcelpos][self.name] = true
@@ -449,8 +451,12 @@ function factions.Faction.on_unclaim_parcel(self, pos)
     self:broadcast("Parcel ("..pos..") has been unclaimed.")
 end
 
-function factions.Faction.on_disband(self, pos)
-    minetest.chat_send_all("Faction "..self.name.." has been disbanded.")
+function factions.Faction.on_disband(self, reason)
+    local msg = "Faction "..self.name.." has been disbanded."
+    if reason then
+        msg = msg.." ("..reason..")"
+    end
+    minetest.chat_send_all(msg)
 end
 
 function factions.Faction.on_new_leader(self)
@@ -642,6 +648,9 @@ function factions.load()
             if #faction.name > factions.faction_name_max_length then
                 faction:disband()
             end
+            if not faction.last_logon then
+                faction.last_logon = os.time()
+            end
         end
         file:close()
     end
@@ -696,9 +705,13 @@ end
 
 
 factions.faction_tick = function()
+    local now = os.time()
     for facname, faction in pairs(factions.factions) do
         if faction:is_online() then
             faction:increase_power(factions.power_per_tick)
+        end
+        if faction.last_logon - now > factions.maximum_faction_inactivity then
+            faction:disband()
         end
     end
 end
@@ -783,18 +796,27 @@ minetest.is_protected = function(pos, player)
         return not player_faction:has_permission(player, "claim") and player_faction.power > 0. and not parcel_faction.is_admin
     end
     -- no faction
-    if not parcel_faction or not player_faction then
+    if not parcel_faction then
         return default_is_protected(pos, player)
+<<<<<<< HEAD
     elseif not player_faction then
         return true
     else
         if not not player_faction then 
+=======
+    elseif player_faction then
+>>>>>>> 4d53e4cc4017fc499bf9c966cd3a6de5cacbe0e8
         if parcel_faction.name == player_faction.name then
             return not parcel_faction:has_permission(player, "build")
         else
             return not parcel_faction:parcel_is_attacked_by(parcelpos, player_faction)
         end
+<<<<<<< HEAD
         end
+=======
+    else
+        return true
+>>>>>>> 4d53e4cc4017fc499bf9c966cd3a6de5cacbe0e8
     end
 end
 

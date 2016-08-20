@@ -750,6 +750,10 @@ end
 )
 minetest.register_on_joinplayer(
 function(player)
+    local faction = factions.get_player_faction(player:get_player_name())
+    if faction then
+        faction.last_logon = os.time()
+    end
 end
 )
 minetest.register_on_respawnplayer(

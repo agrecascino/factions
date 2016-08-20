@@ -770,6 +770,7 @@ minetest.register_on_respawnplayer(
 
 
 
+
 local default_is_protected = minetest.is_protected
 minetest.is_protected = function(pos, player)
     if pos.y < factions.protection_max_depth then
@@ -798,25 +799,14 @@ minetest.is_protected = function(pos, player)
     -- no faction
     if not parcel_faction then
         return default_is_protected(pos, player)
-<<<<<<< HEAD
-    elseif not player_faction then
-        return true
-    else
-        if not not player_faction then 
-=======
     elseif player_faction then
->>>>>>> 4d53e4cc4017fc499bf9c966cd3a6de5cacbe0e8
         if parcel_faction.name == player_faction.name then
             return not parcel_faction:has_permission(player, "build")
         else
             return not parcel_faction:parcel_is_attacked_by(parcelpos, player_faction)
         end
-<<<<<<< HEAD
-        end
-=======
     else
         return true
->>>>>>> 4d53e4cc4017fc499bf9c966cd3a6de5cacbe0e8
     end
 end
 

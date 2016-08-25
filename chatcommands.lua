@@ -63,7 +63,7 @@ factions.register_command = function(cmd_name, cmd)
                     end
                 elseif argtype == "player" then
                     local pl = minetest.get_player_by_name(arg)
-                    if not pl or not factions.players[arg] then
+                    if not pl and not factions.players[arg] then
                         send_error(player, "Player is not online.")
                         return false
                     else

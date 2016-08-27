@@ -557,6 +557,52 @@ factions.register_command("forceupdate", {
     end
 })
 
+factions.register_command("which", {
+    description = "Gets a player's faction",
+    infaction = false,
+    format = {"string"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local playername = args.strings[1]
+        local faction = factions.get_player_faction(playername)
+        if not faction then
+            send_error(player, "Player "..playername.." does not belong to any faction")
+            return false
+        else
+            minetest.chat_send_player(player, "player "..playername.." belongs to faction "..faction.name)
+            return true
+        end
+    end
+})
+
+factions.register_command("setleader", {
+    description = "Set a player as a faction's leader",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction", "player"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local playername = args.players[1]:get_player_name()
+        local playerfaction = factions.get_player_faction(playername)
+        local targetfaction = args.factions[1]
+        if playerfaction.name ~= targetfaction.name then
+            send_error(player, "Player "..playername.." is not in faction "..targetfaction.name..".")
+            return false
+        end
+        targetfaction:set_leader(playername)
+        return true
+    end
+})
+
+factions.register_command("setadmin", {
+    description = "Make a faction an admin faction",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        args.factions[1].is_admin = false
+        return true
+    end
+})
+
 -------------------------------------------------------------------------------
 -- name: cmdhandler(playername,parameter)
 --

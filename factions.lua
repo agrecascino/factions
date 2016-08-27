@@ -248,6 +248,9 @@ end
 
 --! @brief change the faction leader
 function factions.Faction.set_leader(self, player)
+    if self.leader then
+        self.players[self.leader] = self.default_rank
+    end
     self.leader = player
     self.players[player] = self.default_leader_rank
     self:on_new_leader()
@@ -392,7 +395,7 @@ function factions.Faction.is_online(self)
 end
 
 function factions.Faction.attack_parcel(self, parcelpos)
-    local attacked_faction = factions.get_parcel_faction(parcelpos)
+--[[    local attacked_faction = factions.get_parcel_faction(parcelpos)
     if attacked_faction then
         self.power = self.power - factions.power_per_attack
         if attacked_faction.attacked_parcels[parcelpos] then 
@@ -406,6 +409,7 @@ function factions.Faction.attack_parcel(self, parcelpos)
         end
         factions.save()
     end
+    ]]
 end
 
 function factions.Faction.stop_attack(self, parcelpos)
@@ -710,7 +714,7 @@ factions.faction_tick = function()
         if faction:is_online() then
             faction:increase_power(factions.power_per_tick)
         end
-        if faction.last_logon - now > factions.maximum_faction_inactivity then
+        if now - faction.last_logon > factions.maximum_faction_inactivity then
             faction:disband()
         end
     end

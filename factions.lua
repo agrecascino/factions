@@ -248,6 +248,9 @@ end
 
 --! @brief change the faction leader
 function factions.Faction.set_leader(self, player)
+    if self.leader then
+        self.players[self.leader] = self.default_rank
+    end
     self.leader = player
     self.players[player] = self.default_leader_rank
     self:on_new_leader()

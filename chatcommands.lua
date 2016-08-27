@@ -574,6 +574,24 @@ factions.register_command("which", {
     end
 })
 
+factions.register_command("setleader", {
+    description = "Set a player as a faction's leader",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction", "player"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local playername = args.players[1]:get_player_name()
+        local playerfaction = factions.get_player_faction(playername)
+        local targetfaction = args.factions[1]
+        if playerfaction.name ~= targetfaction.name then
+            send_error(player, "Player "..playername.." is not in faction "..targetfaction.name..".")
+            return false
+        end
+        targetfaction:set_leader(playername)
+        return true
+    end
+})
+
 -------------------------------------------------------------------------------
 -- name: cmdhandler(playername,parameter)
 --

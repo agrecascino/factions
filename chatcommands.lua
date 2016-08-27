@@ -592,6 +592,17 @@ factions.register_command("setleader", {
     end
 })
 
+factions.register_command("setadmin", {
+    description = "Make a faction an admin faction",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        args.factions[1].is_admin = false
+        return true
+    end
+})
+
 -------------------------------------------------------------------------------
 -- name: cmdhandler(playername,parameter)
 --

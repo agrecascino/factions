@@ -557,6 +557,23 @@ factions.register_command("forceupdate", {
     end
 })
 
+factions.register_command("which", {
+    description = "Gets a player's faction",
+    infaction = false,
+    format = {"string"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local playername = args.strings[1]
+        local faction = factions.get_player_faction(playername)
+        if not faction then
+            send_error(player, "Player "..playername.." does not belong to any faction")
+            return false
+        else
+            minetest.chat_send_player(player, "player "..playername.." belongs to faction "..faction.name)
+            return true
+        end
+    end
+})
+
 -------------------------------------------------------------------------------
 -- name: cmdhandler(playername,parameter)
 --

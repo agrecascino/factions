@@ -392,7 +392,7 @@ function factions.Faction.is_online(self)
 end
 
 function factions.Faction.attack_parcel(self, parcelpos)
-    local attacked_faction = factions.get_parcel_faction(parcelpos)
+--[[    local attacked_faction = factions.get_parcel_faction(parcelpos)
     if attacked_faction then
         self.power = self.power - factions.power_per_attack
         if attacked_faction.attacked_parcels[parcelpos] then 
@@ -406,6 +406,7 @@ function factions.Faction.attack_parcel(self, parcelpos)
         end
         factions.save()
     end
+    ]]
 end
 
 function factions.Faction.stop_attack(self, parcelpos)

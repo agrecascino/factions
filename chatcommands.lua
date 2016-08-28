@@ -623,6 +623,7 @@ factions.register_command("obliterate", {
         for _, f in pairs(factions.factions) do
             f:disband("obliterated")
         end
+        return true
     end
 })
 
@@ -640,6 +641,21 @@ factions.register_command("getspawn", {
             send_error(player, "Faction has no spawn set.")
             return false
         end
+    end
+})
+
+factions.register_command("whoin", {
+    description = "Get all members of a faction.",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local msg = {}
+        for player, _ in pairs(args.factions[1].players) do
+            table.insert(msg, player)
+        end
+        minetest.chat_send_player(player, table.concat(msg, ", "))
+        return true
     end
 })
 

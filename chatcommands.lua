@@ -659,6 +659,18 @@ factions.register_command("whoin", {
     end
 })
 
+factions.register_command("stats", {
+    description = "Get stats of a faction.",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local f = args.factions[1]
+        minetest.chat_send_player(player, "Power: "..f.power.."/"..f.maxpower - f.usedpower.."/"..f.maxpower)
+        return true
+    end
+})
+
 -------------------------------------------------------------------------------
 -- name: cmdhandler(playername,parameter)
 --

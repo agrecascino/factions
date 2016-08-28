@@ -476,7 +476,11 @@ function factions.Faction.on_player_invited(self, player)
 end
 
 function factions.Faction.on_toggle_join_free(self, player)
-    self:broadcast("This faction is now invite-free.")
+    if self.join_free then
+        self:broadcast("This faction is now invite-free.")
+    else
+        self:broadcast("This faction is no longer invite-free.")
+    end
 end
 
 function factions.Faction.on_new_alliance(self, faction)

@@ -462,8 +462,10 @@ factions.register_command("help", {
 factions.register_command("spawn", {
     description = "Shows your faction's spawn",
     on_success = function(player, faction, pos, parcelpos, args)
-        if faction.spawn then
-            minetest.chat_send_player(player, "Spawn is at ("..table.concat(faction.spawn, ", ")..")")
+        local spawn = faction.spawn
+        if spawn then
+            local spawn = {spawn.x, spawn.y, spawn.z}
+            minetest.chat_send_player(player, "Spawn is at ("..table.concat(spawn, ", ")..")")
             return true
         else
             minetest.chat_send_player(player, "Your faction has no spawn set.")

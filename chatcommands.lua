@@ -462,8 +462,10 @@ factions.register_command("help", {
 factions.register_command("spawn", {
     description = "Shows your faction's spawn",
     on_success = function(player, faction, pos, parcelpos, args)
-        if faction.spawn then
-            minetest.chat_send_player(player, "Spawn is at ("..table.concat(faction.spawn, ", ")..")")
+        local spawn = faction.spawn
+        if spawn then
+            local spawn = {spawn.x, spawn.y, spawn.z}
+            minetest.chat_send_player(player, "Spawn is at ("..table.concat(spawn, ", ")..")")
             return true
         else
             minetest.chat_send_player(player, "Your faction has no spawn set.")
@@ -599,6 +601,92 @@ factions.register_command("setadmin", {
     format = {"faction"},
     on_success = function(player, faction, pos, parcelpos, args)
         args.factions[1].is_admin = false
+        return true
+    end
+})
+
+factions.register_command("resetpower", {
+    description = "Reset a faction's power",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        args.factions[1].power = 0
+        return true
+    end
+})
+
+
+factions.register_command("obliterate", {
+    description = "Remove all factions",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        for _, f in pairs(factions.factions) do
+            f:disband("obliterated")
+        end
+        return true
+    end
+})
+
+factions.register_command("getspawn", {
+    description = "Get a faction's spawn",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local spawn = args.factions[1].spawn
+        if spawn then
+            minetest.chat_send_player(player, spawn.x..","..spawn.y..","..spawn.z)
+            return true
+        else
+            send_error(player, "Faction has no spawn set.")
+            return false
+        end
+    end
+})
+
+factions.register_command("whoin", {
+    description = "Get all members of a faction.",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local msg = {}
+        for player, _ in pairs(args.factions[1].players) do
+            table.insert(msg, player)
+        end
+        minetest.chat_send_player(player, table.concat(msg, ", "))
+        return true
+    end
+})
+
+factions.register_command("stats", {
+    description = "Get stats of a faction.",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local f = args.factions[1]
+        minetest.chat_send_player(player, "Power: "..f.power.."/"..f.maxpower - f.usedpower.."/"..f.maxpower)
+        return true
+    end
+})
+
+factions.register_command("seen", {
+    description = "Check the last time a faction had a member logged in",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local lastseen = args.factions[1].last_logon
+        local now = os.time()
+        local time = now - lastseen
+        local minutes = math.floor(time / 60)
+        local hours = math.floor(minutes / 60)
+        local days = math.floor(hours / 24)
+        minetest.chat_send_player(player, "Last seen "..days.." day(s), "..
+            hours % 24 .." hour(s), "..minutes % 60 .." minutes, "..time % 60 .." second(s) ago.")
         return true
     end
 })

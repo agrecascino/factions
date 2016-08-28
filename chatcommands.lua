@@ -603,6 +603,17 @@ factions.register_command("setadmin", {
     end
 })
 
+factions.register_commad("resetpower", {
+    description = "Reset a faction's power",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        args.factionsp[1].power = 0
+        return true
+    end
+})
+
 -------------------------------------------------------------------------------
 -- name: cmdhandler(playername,parameter)
 --

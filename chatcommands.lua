@@ -673,6 +673,24 @@ factions.register_command("stats", {
     end
 })
 
+factions.register_command("seen", {
+    description = "Check the last time a faction had a member logged in",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local lastseen = args.factions[1].last_logon
+        local now = os.time()
+        local time = now - lastseen
+        local minutes = math.floor(time / 60)
+        local hours = math.floor(minutes / 60)
+        local days = math.floor(hours / 24)
+        minetest.chat_send_player(player, "Last seen "..days.." day(s), "..
+            hours % 24 .." hour(s), "..minutes % 60 .." minutes, "..time % 60 .." second(s) ago.")
+        return true
+    end
+})
+
 -------------------------------------------------------------------------------
 -- name: cmdhandler(playername,parameter)
 --

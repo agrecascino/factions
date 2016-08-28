@@ -603,14 +603,43 @@ factions.register_command("setadmin", {
     end
 })
 
-factions.register_commad("resetpower", {
+factions.register_command("resetpower", {
     description = "Reset a faction's power",
     infaction = false,
     global_privileges = {"faction_admin"},
     format = {"faction"},
     on_success = function(player, faction, pos, parcelpos, args)
-        args.factionsp[1].power = 0
+        args.factions[1].power = 0
         return true
+    end
+})
+
+
+factions.register_command("obliterate", {
+    description = "Remove all factions",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        for _, f in pairs(factions.factions) do
+            f:disband("obliterated")
+        end
+    end
+})
+
+factions.register_command("getspawn", {
+    description = "Get a faction's spawn",
+    infaction = false,
+    global_privileges = {"faction_admin"},
+    format = {"faction"},
+    on_success = function(player, faction, pos, parcelpos, args)
+        local spawn = args.factions[1].spawn
+        if spawn then
+            minetest.chat_send_player(player, spawn.x..","..spawn.y..","..spawn.z)
+            return true
+        else
+            send_error(player, "Faction has no spawn set.")
+            return false
+        end
     end
 })
 

@@ -37,6 +37,7 @@ factions.register_command = function(cmd_name, cmd)
                 local bool, missing_privs = minetest.check_player_privs(player, tmp)
                 if not bool then
                     send_error(player, "Unauthorized.")
+                    return false
                 end
             end
             -- checks argument formats

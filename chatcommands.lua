@@ -37,6 +37,7 @@ factions.register_command = function(cmd_name, cmd)
                 local bool, missing_privs = minetest.check_player_privs(player, tmp)
                 if not bool then
                     send_error(player, "Unauthorized.")
+                    return false
                 end
             end
             -- checks argument formats
@@ -250,7 +251,7 @@ factions.register_command("kick", {
         local victim = args.players[1]
         local victim_faction = factions.get_player_faction(victim:get_player_name())
         if victim_faction and victim:get_player_name() ~= faction.leader then -- can't kick da king
-            faction:remove_player(player)
+            faction:remove_player(victim:get_player_name())
             return true
         elseif not victim_faction then
             send_error(player, victim:get_player_name().." is not in your faction.")
